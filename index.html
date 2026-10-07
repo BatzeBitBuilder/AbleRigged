@@ -1,0 +1,1903 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AbleRigged – Automate your Kemper in Ableton Live</title>
+<link rel="icon" href="data:image/svg+xml,<svg viewBox='0 0 70 72' xmlns='http://www.w3.org/2000/svg'><rect x='0' y='0' width='40' height='14' rx='2' fill='%23ffd23f'/><rect x='44' y='0' width='22' height='14' rx='2' fill='%23ffd23f' opacity='.5'/><rect x='0' y='18' width='22' height='14' rx='2' fill='%235ad1ff' opacity='.5'/><rect x='26' y='18' width='40' height='14' rx='2' fill='%235ad1ff'/><rect x='0' y='36' width='30' height='14' rx='2' fill='%23ff6b9a'/><rect x='34' y='36' width='32' height='14' rx='2' fill='%23ff6b9a' opacity='.5'/><rect x='0' y='54' width='66' height='14' rx='2' fill='%239cff6b'/></svg>">
+<style>
+:root{--bg:#1e1e1e;--panel:#2a2a2a;--panel2:#333;--line:#3d3d3d;--txt:#ddd;--dim:#888;--acc:#ff9d2e;--cur:#4fc3ff}
+html.light{--bg:#f4f4f4;--panel:#e4e4e4;--panel2:#fff;--line:#c6c6c6;--txt:#222;--dim:#666;--acc:#e07800;--cur:#0a87cc}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:12px/1.3 system-ui,Segoe UI,Arial,sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%}
+header{display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header .title{display:flex;align-items:center;gap:7px;margin-right:6px;white-space:nowrap}
+header .title .nm{font-size:16px;font-weight:300;color:#fff}header .title .nm b{font-weight:700;color:#ffd23f}
+header .title .sub{display:flex;flex-direction:column;font-size:9px;line-height:1.2;color:var(--dim);border-left:1px solid var(--line);padding-left:7px}
+.mdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#555;margin-right:6px;vertical-align:middle}.mdot.ok{background:#3c5}.mdot.half{background:#fc3}
+#btnPlay.on{background:#264d26;border-color:#3a3}
+header .sep{width:1px;height:20px;background:var(--line)}
+button,select,input{background:var(--panel2);color:var(--txt);border:1px solid #555;border-radius:3px;padding:3px 8px;font:inherit}
+button{cursor:pointer}button:hover{border-color:var(--acc)}
+input[type=number]{width:60px}
+label{color:var(--dim);display:flex;gap:4px;align-items:center}
+#info{color:var(--dim);margin-left:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40%}
+#wrap{flex:1;position:relative;min-height:120px}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--dim);font-size:14px;pointer-events:none}
+#drop b{color:var(--txt);font-size:16px}
+#wrap.dragover{outline:2px dashed var(--acc);outline-offset:-6px}
+footer{display:flex;gap:16px;padding:4px 10px;background:var(--panel);border-top:1px solid var(--line);color:var(--dim);white-space:nowrap;overflow:hidden}
+footer b{color:var(--txt);font-weight:500}
+/* ---- Unterer Bereich ---- */
+#bottom{display:flex;height:350px;border-top:1px solid #111;background:#202020}
+#splitter{height:5px;cursor:ns-resize;background:#181818}
+#splitter:hover{background:var(--acc)}
+/* Remote */
+#remoteBox{padding:8px 12px;display:flex;flex-direction:row;align-items:flex-start;gap:10px;border-right:1px solid var(--line);overflow:auto}
+.remote{background:linear-gradient(#2f4a3c,#1f3329);border:1px solid #0b140f;border-radius:10px;padding:8px 12px 8px;box-shadow:inset 0 1px 0 #4d6b5b,0 3px 8px #0008;width:max-content;display:flex;flex-direction:column;gap:7px}
+.rrow.mid{background:#28402f;border-radius:6px;padding:6px 0;box-shadow:inset 0 0 0 1px #3c5c48}
+.remote.loop .slotlbl{background:#10261a;color:#7fe0a8;border-color:#2a6}
+.lcd{grid-column:1/5;align-self:stretch;background:#0d1a10;border:2px solid #000;border-radius:4px;color:#9dff9d;font:600 15px/1.2 Consolas,monospace;padding:6px 10px;display:flex;flex-direction:column;justify-content:center;gap:4px;text-shadow:0 0 4px #4f4;width:100%;overflow:hidden;white-space:nowrap}
+.lcd .pre{color:#ffd76a;text-shadow:0 0 4px #fa0}
+.lcd small{font-size:11px;color:#6c6;text-shadow:none}
+.rrow{display:grid;grid-template-columns:repeat(6,92px);gap:6px;justify-items:center}
+.sw{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;user-select:none}
+.sw .lbl{font:600 10px system-ui;color:#ccc;height:26px;width:88px;text-align:center;display:flex;align-items:center;justify-content:center;background:#151515;border:1px solid #000;border-radius:3px;padding:0 3px;overflow:hidden;line-height:1.1}
+.sw .led{width:9px;height:9px;border-radius:50%;background:#311;border:1px solid #000}
+.sw .led.on{background:#f33;box-shadow:0 0 6px #f33}
+.sw .led.on.g{background:#3f5;box-shadow:0 0 6px #3f5}
+.sw .led.on.y{background:#fc3;box-shadow:0 0 6px #fc3}
+.sw .knob{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ddd,#888 45%,#444 75%);border:2px solid #111;box-shadow:0 2px 3px #000}
+.sw:hover .knob{outline:2px solid var(--acc)}
+.sw:active .knob{transform:translateY(1px)}
+.sw .name{font:600 12px system-ui;color:#d8e4dc;letter-spacing:.5px}
+.slotlbl.active{background:#2a1a00;color:#ffb347;border-color:#a60}
+.modrow{display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start}
+.modrow .t{grid-column:1/3}
+.modrow button{min-width:42px;padding:3px 6px}
+.modrow button{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.modrow button.empty{opacity:.45}
+.modrow button b{color:#ffb347;margin-right:3px}
+.modrow button.on{background:#264d26;border-color:#3a3}
+.modrow .t{color:var(--dim);margin-right:2px}
+/* Eventliste */
+#evBox{flex:1;display:flex;flex-direction:column;min-width:0}
+#evHead{display:flex;gap:6px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)}
+#evHead b{color:var(--acc)}
+#evList{flex:1;overflow:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:3px 8px;text-align:left;border-bottom:1px solid #2c2c2c;white-space:nowrap}
+th{position:sticky;top:0;background:#262626;color:var(--dim);font-weight:500}
+tr.sel td{background:#4a3410}
+tbody tr{cursor:pointer}tbody tr:hover td{background:#2c2c2c}
+td.midi{color:#8ab;font-family:Consolas,monospace;font-size:11px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+/* Dialoge */
+dialog{background:#2a2a2a;color:var(--txt);border:1px solid #555;border-radius:6px;padding:14px;max-width:95vw;max-height:90vh}
+dialog::backdrop{background:#0008}
+dialog h3{margin:0 0 10px;color:var(--acc);font-size:14px}
+dialog .row{display:flex;gap:8px;align-items:center;margin:6px 0}
+dialog .row>span{width:110px;color:var(--dim)}
+dialog .btns{display:flex;flex-direction:row-reverse;gap:8px;justify-content:flex-start;margin-top:12px}
+#btnAbout{border-color:#ffd23f}
+#dlgAbout{width:520px}#dlgAbout p{margin:6px 0;line-height:1.45}#dlgAbout ul{margin:4px 0 8px;padding-left:18px;line-height:1.5}
+#dlgAbout .kofi{display:inline-block;margin:6px 0 10px;padding:7px 14px;border-radius:4px;background:#ff5e5b;color:#fff;font-weight:600;text-decoration:none}#dlgAbout .kofi:hover{filter:brightness(1.1)}
+#dlgAbout .legal{font-size:11px;color:var(--dim);border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
+#dlgAbout .ok{color:#3c5}#dlgAbout .bad{color:#f66}
+#compatBar{display:flex;gap:10px;align-items:center;padding:5px 10px;background:#5a2a10;color:#ffd9b8;border-bottom:1px solid #8a4a20}#compatBar[hidden]{display:none}#compatBar button{margin-left:auto}
+#perfTable{max-height:60vh;overflow:auto;border:1px solid var(--line)}
+#perfTable input{width:120px;padding:2px 4px}
+#perfTable input.fx{width:70px}
+#perfTable td{padding:2px 3px}
+#dlgHelp{padding:0;width:min(1100px,94vw);height:88vh;overflow:hidden}#dlgHelp[open]{display:flex;flex-direction:column}
+#dlgHelp .hh{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line)}#dlgHelp .hh b{color:var(--acc);flex:1}
+#helpFrame{flex:1;border:0;width:100%;background:var(--bg)}
+.pop{position:fixed;background:#2a2a2a;border:1px solid #555;border-radius:5px;padding:6px;display:flex;flex-direction:column;gap:4px;z-index:10;box-shadow:0 4px 12px #000a}
+/* Heller Modus */
+html.light header .title .nm{color:#111}html.light header .title .nm b{color:#d9a000}
+html.light button,html.light select,html.light input{border-color:#bbb}
+html.light #btnPlay.on,html.light .modrow button.on{background:#cdeccd;border-color:#3a3}
+html.light #bottom{background:#ececec;border-top-color:#bbb}html.light #splitter{background:#d2d2d2}
+html.light .modrow button b{color:#c06400}
+html.light th,html.light td{border-bottom-color:#dcdcdc}html.light th{background:#e6e6e6}
+html.light tr.sel td{background:#ffe0ad}html.light tbody tr:hover td{background:#e6e6e6}html.light td.midi{color:#357}
+html.light dialog,html.light .pop{background:#f4f4f4;border-color:#bbb}html.light .pop{box-shadow:0 4px 12px #0004}html.light dialog::backdrop{background:#0005}
+html.light #midiLog{background:#fff!important;color:#357!important}
+#expMsg.ok,#expMsg.err{padding:8px 10px;border-radius:4px;color:var(--txt);animation:expFlash .9s ease-out}
+#expMsg.ok{background:rgba(60,180,90,.18);border:1px solid #3cb45a}
+#expMsg.ok::before{content:'✔ ';color:#3cb45a;font-weight:bold}
+#expMsg.err{background:rgba(255,80,80,.15);border:1px solid #f55}
+@keyframes expFlash{0%{box-shadow:0 0 0 4px rgba(60,180,90,.6)}100%{box-shadow:0 0 0 0 transparent}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="title"><svg viewBox="0 0 70 72" width="20" height="20" aria-hidden="true"><rect x="0" y="0" width="40" height="14" rx="2" fill="#ffd23f"/><rect x="44" y="0" width="22" height="14" rx="2" fill="#ffd23f" opacity=".5"/><rect x="0" y="18" width="22" height="14" rx="2" fill="#5ad1ff" opacity=".5"/><rect x="26" y="18" width="40" height="14" rx="2" fill="#5ad1ff"/><rect x="0" y="36" width="30" height="14" rx="2" fill="#ff6b9a"/><rect x="34" y="36" width="32" height="14" rx="2" fill="#ff6b9a" opacity=".5"/><rect x="0" y="54" width="66" height="14" rx="2" fill="#9cff6b"/></svg><span class="nm">Able<b>Rigged</b></span><span class="sub"><span>Automate your Kemper in Ableton Live.</span><span>by Thorsten Banning</span></span></span>
+    <button id="btnOpen" title="Ableton-Set öffnen">ALS öffnen…</button>
+    <button id="btnProjSave" title="Projekt speichern (Strg+S)">Projekt speichern</button>
+    <button id="btnProjLoad" title="Projekt (.json) laden">Projekt laden…</button>
+    <input id="file" type="file" accept=".als,.xml" hidden>
+    <input id="projFile" type="file" accept=".json" hidden>
+    <span class="sep"></span>
+    <label>Gerät <select id="devSel"></select></label>
+    <button id="btnPerf">Performances…</button>
+    <button id="btnExport" style="border-color:var(--acc)">Export…</button>
+    <span class="sep"></span>
+    <button id="btnMidi" title="MIDI-Verbindung zum Kemper"><span id="midiDot" class="mdot"></span>MIDI…</button>
+    <button id="btnPlay" title="Ab Cursor abspielen und Kemper schalten (Leertaste)">▶</button>
+    <button id="btnStop" title="Stopp">■</button>
+    <label>MIDI-Kanal <input id="midiCh" type="number" min="1" max="16" value="1" style="width:46px"></label>
+    <span class="sep"></span>
+    <label>Raster <select id="snap">
+      <option value="bar" selected>Takt</option><option value="2">1/2</option><option value="1">1/4</option>
+      <option value="0.5">1/8</option><option value="0.25">1/16</option><option value="0">aus</option>
+    </select></label>
+    <label>Spurhöhe <input id="trackH" type="range" min="18" max="90" value="34" style="width:80px"></label>
+    <button id="btnFit" title="Ganzen Song anzeigen (F)">Einpassen</button>
+    <button id="btnZoomIn" title="Zoom + (Strg+Mausrad)">＋</button>
+    <button id="btnZoomOut" title="Zoom −">－</button>
+    <select id="langSel" title="Sprache / Language"><option value="de">Deutsch</option><option value="en">English</option></select>
+    <button id="btnTheme" title="Hell-/Dunkel-Modus">☀</button>
+    <button id="btnAbout" title="Info &amp; Unterstützen">☕ Unterstützen</button>
+    <button id="btnHelp" title="Handbuch (F1)">? Hilfe</button>
+    <span id="info">Keine Datei geladen</span>
+  </header>
+  <div id="compatBar" hidden><span id="compatMsg"></span><button type="button" id="compatClose">✕</button></div>
+  <div id="wrap">
+    <canvas id="cv"></canvas>
+    <div id="drop"><b>Ableton-Set (.als) hierher ziehen</b>oder „ALS öffnen…“ klicken</div>
+  </div>
+  <div id="splitter" title="Höhe ändern"></div>
+  <div id="bottom">
+    <div id="remoteBox">
+      <div class="remote">
+        <div class="rrow" id="rowTop"><div class="lcd" id="lcd"></div></div>
+        <div class="rrow mid" id="rowMid"></div>
+        <div class="rrow" id="rowBot"></div>
+      </div>
+      <div class="modrow" id="modRow"></div>
+    </div>
+    <div id="evBox">
+      <div id="evHead"><b>Events</b><span id="evCount" style="color:var(--dim)"></span>
+        <span style="margin-left:auto"></span>
+        <button id="btnEvEdit" title="Doppelklick auf Event">Bearbeiten</button>
+        <button id="btnEvDel" title="Entf">Löschen</button>
+        <button id="btnUndo" title="Strg+Z">↶</button><button id="btnRedo" title="Strg+Y">↷</button>
+      </div>
+      <div id="evList"></div>
+    </div>
+  </div>
+  <footer>
+    <span>Cursor: <b id="stCur">–</b></span>
+    <span>Maus: <b id="stHover">–</b></span>
+    <span id="stClip"></span>
+    <span style="margin-left:auto">AbleRigged · © Thorsten Banning</span>
+    <span>Remote-Taste = Event am Cursor (LOOPER schaltet Looper-Modus) · Ziehen: verschieben · Doppelklick: bearbeiten · Entf · Strg+Z/C/V/S · ←/→ · F</span>
+  </footer>
+</div>
+
+<dialog id="dlgEv"><form method="dialog"><h3 id="dlgEvTitle">Event</h3><div id="dlgEvBody"></div>
+  <div class="btns"><button value="ok" id="dlgEvOk">OK</button><button value="cancel">Abbrechen</button></div></form></dialog>
+
+<dialog id="dlgExp"><form method="dialog"><h3>Export</h3>
+  <div class="row"><span>Zielgerät</span><select id="expDev"></select><small id="expDevMsg" style="color:#f77"></small></div>
+  <div class="row"><span>Impulslänge</span><select id="expPulse"><option value="0.015625">1/64 Schlag</option><option value="0.03125" selected>1/32 Schlag</option><option value="0.0625">1/16 Schlag</option></select>
+    <small id="expPulseMs" style="color:var(--dim)"></small></div>
+  <div class="row"><span>MIDI-Ausgang in Live</span><select id="expOut" style="min-width:220px"></select><small id="expChMsg" style="color:var(--dim)"></small></div>
+  <div style="color:var(--dim);max-width:520px;margin:6px 0 10px">Vorwahl (CC47) und NRPN-Adresse werden um 2 Impulse vor dem Event gesendet, damit der Slot-/Looper-Befehl exakt auf der Position liegt.</div>
+  <div class="btns" style="flex-direction:row;justify-content:flex-start">
+    <button type="button" id="expAls" style="border-color:var(--acc)">Ableton-Set mit KEMPER-Spur (.als)</button>
+    <button type="button" id="expMid">MIDI-Datei (.mid)</button>
+    <span style="flex:1"></span><button value="cancel">Schließen</button></div>
+  <div id="expMsg" style="margin-top:8px;color:var(--dim);max-width:560px"></div>
+</form></dialog>
+
+<dialog id="dlgMidi"><form method="dialog"><h3>MIDI-Verbindung</h3>
+  <div class="row"><span>Ausgang (→ Kemper)</span><select id="midiOut" style="min-width:260px"></select></div>
+  <div class="row"><span>Eingang (← Kemper)</span><select id="midiIn" style="min-width:260px"></select></div>
+  <div class="row"><span></span><label><input type="checkbox" id="midiThru"> Remote-Klicks sofort an den Kemper senden</label></div>
+  <div class="row"><span></span><label><input type="checkbox" id="midiChase" checked> Beim Abspielen zuerst Zustand am Cursor senden</label></div>
+  <div id="midiStatus" style="color:var(--dim);margin:4px 0 0"></div>
+  <div class="row"><span>Diagnose</span><button type="button" id="btnTestRig">Test: Rig-Namen lesen</button><button type="button" id="btnTestOut">Test: Tuner an/aus senden</button></div>
+  <pre id="midiLog" style="background:#181818;border:1px solid var(--line);height:90px;overflow:auto;margin:4px 0;padding:4px 6px;font-size:11px;color:#8ab;white-space:pre-wrap"></pre>
+  <h3 style="margin-top:16px">Namen vom Kemper auslesen <small style="color:var(--dim);font-weight:400">→ Profil „<span id="scanDev"></span>“</small></h3>
+  <div class="row"><span>Aktuelle Perf.</span><button type="button" id="btnReadCur">Lesen und speichern als Nr.</button><input id="curNo" type="number" min="1" max="125" value="1"></div>
+  <div class="row"><span>Bereich</span>von <input id="scanFrom" type="number" min="1" max="125" value="1"> bis <input id="scanTo" type="number" min="1" max="125" value="25">
+    <label><input type="checkbox" id="scanLoad"> Performance dabei laden (Slot 1)</label></div>
+  <div class="row"><span></span><label><input type="checkbox" id="scanStomps"> Stomp-Belegung mitlesen (lädt jeden Slot, ca. 5 s pro Performance)</label></div>
+  <div class="row"><span></span><button type="button" id="btnScan" style="border-color:var(--acc)">Bereich auslesen</button><button type="button" id="btnScanStop">Abbrechen</button></div>
+  <div id="scanMsg" style="color:var(--dim);max-width:560px;min-height:18px"></div>
+  <div class="btns"><button value="close">Schließen</button></div>
+</form></dialog>
+
+<dialog id="dlgPerf"><form method="dialog"><h3 id="perfTitle">Performances</h3>
+  <div class="row"><span>Geräteprofil</span><button type="button" id="devRename">Umbenennen…</button><button type="button" id="devCopy">Als neues Profil kopieren…</button><button type="button" id="devDelete">Profil löschen</button></div>
+  <div class="row"><span>Anzahl</span><input id="perfCount" type="number" min="1" max="125" value="25">
+    <span style="flex:1"></span>
+    <button type="button" id="perfImport">JSON importieren…</button><button type="button" id="perfExport">JSON exportieren</button>
+    <input id="perfFile" type="file" accept=".json" hidden></div>
+  <div id="perfTable"></div>
+  <div style="color:var(--dim);margin-top:6px">Effekt I–IV: Beschriftung der Effekt-Taster der Remote (je Performance). Leer = Name von Stomp A–D des aktiven Slots (Kemper-Standardzuordnung).</div>
+  <div class="btns"><button value="ok">Übernehmen</button><button value="cancel">Abbrechen</button></div></form></dialog>
+
+<dialog id="dlgHelp"><div class="hh"><b>Handbuch</b><button type="button" id="helpClose" title="Schließen (Esc)">✕</button></div><iframe id="helpFrame" title="AbleRigged Handbuch"></iframe></dialog>
+<dialog id="dlgAbout"><form method="dialog"><h3 id="aboutTitle">Über AbleRigged</h3><div id="aboutBody"></div><div class="btns"><button value="close" id="aboutClose">Schließen</button></div></form></dialog>
+
+<template id="helpDoc">
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>AbleRigged – Handbuch</title>
+<style>
+:root{--bg:#1e1e1e;--panel:#2a2a2a;--line:#3d3d3d;--txt:#ddd;--dim:#999;--acc:#ff9d2e;--y:#ffd23f}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:14px/1.55 system-ui,Segoe UI,Arial,sans-serif}
+body{display:flex}
+nav{width:230px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:14px 10px;overflow:auto;height:100%}
+nav b{display:block;color:#fff;font-size:15px;margin:0 6px 10px}nav b span{color:var(--y)}
+nav a{display:block;color:var(--dim);text-decoration:none;padding:3px 6px;border-radius:3px;font-size:13px}
+nav a:hover,nav a.on{color:var(--txt);background:#333}
+main{flex:1;overflow:auto;height:100%;padding:18px 32px 60px;scroll-behavior:smooth}
+main>section{max-width:820px}
+h1{font-size:22px;font-weight:300;color:#fff;margin:0 0 4px}h1 b{color:var(--y)}
+h2{font-size:17px;color:var(--acc);margin:34px 0 8px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:14px;color:#fff;margin:18px 0 4px}
+p,li{color:#cfcfcf}ul,ol{padding-left:22px}li{margin:3px 0}
+code,kbd{font:12px Consolas,monospace;background:#2e2e2e;border:1px solid #444;border-radius:3px;padding:1px 5px;color:#ffd9a8}
+kbd{color:#fff;border-bottom-width:2px}
+table{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid #333;vertical-align:top}
+th{color:var(--dim);font-weight:500;background:#262626}
+.note{background:#2a2414;border-left:3px solid var(--acc);padding:8px 12px;margin:10px 0;border-radius:0 4px 4px 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.sub{color:var(--dim);margin:0 0 10px}
+html.light{--bg:#f7f7f7;--panel:#e8e8e8;--line:#cfcfcf;--txt:#222;--dim:#666;--acc:#d06c00;--y:#c99400}
+html.light nav b,html.light h1,html.light h3{color:#111}html.light nav a:hover,html.light nav a.on{background:#d8d8d8}
+html.light p,html.light li{color:#333}html.light code,html.light kbd{background:#eee;border-color:#c8c8c8;color:#9a4a10}html.light kbd{color:#111}
+html.light th,html.light td{border-bottom-color:#ddd}html.light th{background:#eaeaea}html.light .note{background:#fff2dc}
+@media (max-width:700px){nav{display:none}main{padding:14px 16px 40px}}
+</style></head><body>
+<nav id="toc">
+<b>Able<span>Rigged</span> · Handbuch</b>
+<a href="#start">Überblick</a>
+<a href="#req">Voraussetzungen</a>
+<a href="#quick">Schnellstart</a>
+<a href="#ui">Die Oberfläche</a>
+<a href="#load">Set laden</a>
+<a href="#perf">Geräte &amp; Performances</a>
+<a href="#events">Events setzen</a>
+<a href="#edit">Events bearbeiten</a>
+<a href="#nav">Navigation &amp; Zoom</a>
+<a href="#midi">MIDI-Verbindung</a>
+<a href="#scan">Namen vom Kemper lesen</a>
+<a href="#play">Vorschau abspielen</a>
+<a href="#export">Export</a>
+<a href="#save">Speichern &amp; Projekte</a>
+<a href="#keys">Tastenkürzel</a>
+<a href="#ref">MIDI-Referenz</a>
+<a href="#faq">Fehlerbehebung</a>
+</nav>
+<main id="main"><section>
+
+<h1 id="start">Able<b>Rigged</b> – Handbuch</h1>
+<p class="sub">Automate your Kemper in Ableton Live · by Thorsten Banning</p>
+<p>AbleRigged liest ein Ableton-Live-Set (<code>.als</code>), zeigt dessen Arrangement als Zeitleiste und lässt dich darüber Kemper-Befehle platzieren: Performance-/Slot-Wechsel, Effekte an/aus, Tuner, Tap Tempo, Looper und beliebige Control Changes. Das Ergebnis exportierst du als Ableton-Set mit fertiger <b>KEMPER</b>-MIDI-Spur oder als MIDI-Datei – Live schaltet den Kemper dann taktgenau mit.</p>
+
+<h2 id="req">Voraussetzungen</h2>
+<ul>
+<li><b>Browser:</b> Google Chrome oder Microsoft Edge (Web MIDI und Datei-Speicherdialog). Firefox/Safari können Sets bearbeiten und exportieren, aber keine MIDI-Verbindung herstellen.</li>
+<li><b>Kemper Profiler</b> im <b>Performance-Modus</b>, per USB oder MIDI-Interface mit dem Rechner verbunden (nur für Vorschau und Namen-Auslesen nötig).</li>
+<li><b>Ableton Live 11/12</b>; die Sets werden direkt gelesen und geschrieben.</li>
+<li>Für das Auslesen von Namen muss der Browser <b>SysEx</b> erlauben (Abfrage beim ersten Öffnen des MIDI-Dialogs bestätigen).</li>
+</ul>
+
+<h2 id="quick">Schnellstart</h2>
+<ol>
+<li><b>ALS öffnen…</b> klicken oder das <code>.als</code> in das Fenster ziehen.</li>
+<li><b>Performances…</b> öffnen und Namen von Performances und Slots eintragen – oder über <b>MIDI…</b> vom Kemper auslesen.</li>
+<li>Mit Klick in die Zeitleiste den <b>Cursor</b> setzen.</li>
+<li>Auf der virtuellen <b>Remote</b> Performance (▲/▼) wählen und Slot <b>1–5</b> drücken – das Event wird am Cursor gesetzt. Effekte mit <b>I–IIII</b> oder den Tasten unter „Weitere“.</li>
+<li>Mit <kbd>Leertaste</kbd> ab Cursor abspielen und den Kemper live mitschalten lassen (optional).</li>
+<li><b>Export…</b> → <b>Ableton-Set mit KEMPER-Spur</b> in den Ordner des Original-Sets speichern.</li>
+<li>Im Export-Dialog <b>MIDI-Ausgang in Live</b> wählen – Ausgang und Kanal werden in der Spur gespeichert.</li>
+</ol>
+
+<h2 id="ui">Die Oberfläche</h2>
+<h3>Kopfzeile</h3>
+<table>
+<tr><th>Element</th><th>Funktion</th></tr>
+<tr><td>ALS öffnen…</td><td>Ableton-Set laden.</td></tr>
+<tr><td>Projekt speichern / laden…</td><td>Events, Geräteprofile und MIDI-Kanal als <code>.kemper.json</code> sichern bzw. wiederherstellen.</td></tr>
+<tr><td>Gerät</td><td>Aktives Geräteprofil (z. B. „Head“, „Rack“) – jedes mit eigener Performance-Liste. „＋ Neues Gerät…“ legt ein Profil an.</td></tr>
+<tr><td>Performances…</td><td>Namen von Performances, Slots und Effekt-Tastern bearbeiten.</td></tr>
+<tr><td>Export…</td><td>Set mit KEMPER-Spur oder MIDI-Datei erzeugen.</td></tr>
+<tr><td>MIDI…</td><td>Verbindung zum Kemper. Punkt: grau = keine, gelb = nur Ausgang, grün = Ein- und Ausgang.</td></tr>
+<tr><td>▶ / ■</td><td>Vorschau ab Cursor starten / stoppen.</td></tr>
+<tr><td>MIDI-Kanal</td><td>Kanal 1–16, auf dem der Kemper empfängt.</td></tr>
+<tr><td>Raster</td><td>Einrasten für Cursor und Verschieben: Takt, 1/2 … 1/16 oder aus.</td></tr>
+<tr><td>Spurhöhe, Einpassen, ＋/－</td><td>Darstellung der Zeitleiste.</td></tr>
+<tr><td>Deutsch / English</td><td>Sprache der Oberfläche (wird im Browser gespeichert).</td></tr>
+</table>
+<h3>Zeitleiste</h3>
+<p>Oben Lineal (Takte), Taktarten, Locators und die <b>Kemper-Lane</b> mit allen Events; darunter die Spuren und Clips des Sets in ihren Ableton-Farben. Gruppenspuren klappst du über den Spurkopf auf/zu. Die Statuszeile unten zeigt Cursor- und Mausposition (Takt.Schlag.16tel · Zeit · Tempo) sowie Infos zum Event oder Clip unter der Maus.</p>
+<h3>Remote</h3>
+<p>Nachbildung der PROFILER Remote. Das Display zeigt die Performance/den Slot am Cursor, die LEDs den Effektzustand an dieser Stelle. Jeder Tastendruck erzeugt ein Event am Cursor. Rechts daneben: <b>Weitere</b> Module (Stomps A–D, X, Mod, Delay, Reverb, Morph, Rotary, Infinity, Freeze) und <b>+ CC…</b>.</p>
+<h3>Eventliste</h3>
+<p>Alle Events chronologisch mit Position und gesendeten MIDI-Daten. Klick wählt aus (<kbd>Strg</kbd>/<kbd>⇧</kbd> für Mehrfachauswahl), Doppelklick öffnet den Editor. Buttons: Bearbeiten, Löschen, Rückgängig ↶, Wiederholen ↷.</p>
+<p>Den Trenner zwischen Zeitleiste und unterem Bereich kannst du mit der Maus in der Höhe ziehen.</p>
+
+<h2 id="load">Set laden</h2>
+<p>Gelesen werden MIDI-, Audio- und Gruppenspuren mit ihren Arrangement-Clips, Locators, Tempo- und Taktart-Automation der Master-Spur. Alle Positionen beziehen sich auf Schläge (Beats) – Tempowechsel werden korrekt in Zeit umgerechnet.</p>
+<div class="note">Zu jedem Set-Dateinamen merkt sich AbleRigged die Events im Browser. Lädst du dasselbe Set erneut, erscheinen die Events automatisch wieder („Events wiederhergestellt“).</div>
+
+<h2 id="perf">Geräte &amp; Performances</h2>
+<p>Im Dialog <b>Performances…</b> trägst du je Performance (1–125) den Namen, die fünf Slot-Namen und optional Beschriftungen für die Effekt-Taster I–IIII ein. Leere Effekt-Felder zeigen den Stomp A–D des aktiven Slots (Kemper-Standardzuordnung), sofern die Belegung ausgelesen wurde.</p>
+<ul>
+<li><b>Anzahl</b> legt fest, wie viele Performances in der Liste stehen.</li>
+<li><b>JSON importieren/exportieren</b> sichert die Liste eines Profils separat.</li>
+<li><b>Geräteprofile</b>: umbenennen, als neues Profil kopieren oder löschen.</li>
+</ul>
+<h3>Mehrere Kemper (Head, Rack …)</h3>
+<p>Performance-Wechsel speichern den <b>Namen</b> der Performance mit. Beim Export für ein anderes Gerät wird die Performance per Name gesucht – liegt „Song X“ auf dem Rack an Platz 12 statt 3, wird automatisch Platz 12 gesendet. Fehlt der Name auf dem Zielgerät, wird das Event rot mit ⚠ markiert und beim Export übersprungen.</p>
+
+<h2 id="events">Events setzen</h2>
+<p>Events entstehen immer an der <b>Cursor-Position</b>. Ein gleichartiges Event an exakt derselben Stelle wird ersetzt.</p>
+<table>
+<tr><th>Taste/Aktion</th><th>Event</th></tr>
+<tr><td>▲ / ▼ (Perf)</td><td>Performance auf der Remote vorwählen (noch kein Event).</td></tr>
+<tr><td>1 – 5</td><td><span class="dot" style="background:#ff9d2e"></span>Performance-/Slot-Wechsel zur vorgewählten Performance.</td></tr>
+<tr><td>I – IIII, Weitere</td><td><span class="dot" style="background:#3fbf5a"></span>Effekt an / <span class="dot" style="background:#8a3a3a"></span>aus – schaltet jeweils den Zustand am Cursor um.</td></tr>
+<tr><td>TUNER</td><td><span class="dot" style="background:#5aa0d8"></span>Tuner an/aus.</td></tr>
+<tr><td>TAP</td><td><span class="dot" style="background:#9a9a9a"></span>Tap-Tempo-Impuls.</td></tr>
+<tr><td>+ CC…</td><td><span class="dot" style="background:#a77be0"></span>Beliebiger Control Change (Nummer und Wert frei).</td></tr>
+<tr><td>LOOPER</td><td>Schaltet die Remote in den <b>Looper-Modus</b> (LED grün). Dann: 1 = Rec/Play/Overdub, 2 = Stop (<kbd>⇧</kbd>+Klick = Erase), 3 = Trigger, 4 = Reverse, 5 = Half Speed, ▲ = Undo/Redo. <span class="dot" style="background:#2fb3a8"></span>Erneut LOOPER = zurück.</td></tr>
+</table>
+<div class="note">Ist im MIDI-Dialog „Remote-Klicks sofort an den Kemper senden“ aktiv, wird jedes neue Event zusätzlich direkt an den Kemper geschickt – praktisch zum Probehören.</div>
+
+<h2 id="edit">Events bearbeiten</h2>
+<ul>
+<li><b>Auswählen:</b> Klick auf das Event; <kbd>Strg</kbd>/<kbd>⇧</kbd>+Klick ergänzt; in leerer Kemper-Lane ziehen = Rahmenauswahl; <kbd>Strg</kbd>+<kbd>A</kbd> = alle.</li>
+<li><b>Verschieben:</b> Event(s) mit der Maus ziehen – rastet am eingestellten Raster ein.</li>
+<li><b>Bearbeiten:</b> Doppelklick, <kbd>Enter</kbd> oder „Bearbeiten“. Position als <code>Takt.Schlag.16tel</code>, Typ und Parameter änderbar.</li>
+<li><b>Löschen:</b> <kbd>Entf</kbd>, Rechtsklick auf das Event oder „Löschen“.</li>
+<li><b>Kopieren/Einfügen:</b> <kbd>Strg</kbd>+<kbd>C</kbd>, Cursor setzen, <kbd>Strg</kbd>+<kbd>V</kbd> – Abstände bleiben erhalten.</li>
+<li><b>Rückgängig:</b> <kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Strg</kbd>+<kbd>Y</kbd> (bis 200 Schritte).</li>
+</ul>
+
+<h2 id="nav">Navigation &amp; Zoom</h2>
+<table>
+<tr><th>Aktion</th><th>Bedienung</th></tr>
+<tr><td>Cursor setzen</td><td>Klick in die Zeitleiste (ziehen möglich), Klick auf einen Locator springt dorthin.</td></tr>
+<tr><td>Cursor schrittweise</td><td><kbd>←</kbd> / <kbd>→</kbd> im Raster; <kbd>Pos1</kbd> = Songanfang.</td></tr>
+<tr><td>Scrollen</td><td>Mausrad (vertikal), <kbd>⇧</kbd>+Mausrad (horizontal), Bildlaufleiste unten.</td></tr>
+<tr><td>Verschieben (Pan)</td><td>Mittlere Maustaste oder <kbd>Alt</kbd>+Ziehen.</td></tr>
+<tr><td>Zoom</td><td><kbd>Strg</kbd>+Mausrad, <kbd>+</kbd>/<kbd>-</kbd>, Buttons ＋/－; <kbd>F</kbd> = ganzen Song einpassen.</td></tr>
+</table>
+
+<h2 id="midi">MIDI-Verbindung</h2>
+<ol>
+<li><b>MIDI…</b> öffnen, Browser-Abfrage (inkl. SysEx) erlauben.</li>
+<li><b>Ausgang (→ Kemper)</b> und <b>Eingang (← Kemper)</b> wählen. Die Auswahl wird gespeichert.</li>
+<li>Mit Ein- und Ausgang startet AbleRigged den bidirektionalen Modus des Kemper (Beacon alle 5 s).</li>
+<li><b>Diagnose:</b> „Rig-Namen lesen“ prüft die Rückrichtung, „Tuner an/aus senden“ die Senderichtung. Das Protokoll zeigt den MIDI-Verkehr.</li>
+</ol>
+<p><b>Optionen:</b> „Remote-Klicks sofort senden“ (siehe oben) und „Beim Abspielen zuerst Zustand am Cursor senden“ – stellt vor der Vorschau Performance/Slot und Effekte so her, wie sie an der Startposition sein müssten.</p>
+
+<h2 id="scan">Namen vom Kemper lesen</h2>
+<p>Unten im MIDI-Dialog (benötigt Eingang + SysEx). Die Namen landen im aktiven Geräteprofil.</p>
+<ul>
+<li><b>Aktuelle Perf.:</b> liest die gerade geladene Performance und speichert sie unter der angegebenen Nummer.</li>
+<li><b>Bereich auslesen:</b> von–bis; mit „Performance dabei laden“ wird jede Performance aktiv angewählt.</li>
+<li><b>Stomp-Belegung mitlesen:</b> lädt jeden Slot und liest die Effekttypen (ca. 5 s pro Performance). Danach zeigen Remote und „Weitere“ die echten Effektnamen.</li>
+<li>„Abbrechen“ stoppt den Scan jederzeit.</li>
+</ul>
+
+<h2 id="play">Vorschau abspielen</h2>
+<p><kbd>Leertaste</kbd> oder ▶ startet ab Cursor; der Cursor läuft im Songtempo (inkl. Tempoautomation) und sendet jedes Event zum richtigen Zeitpunkt an den Kemper. Ableton selbst läuft dabei nicht mit – die Vorschau dient dem Testen der Schaltungen.</p>
+
+<h2 id="export">Export</h2>
+<h3>Ableton-Set mit KEMPER-Spur (.als)</h3>
+<p>Erzeugt eine Kopie des Sets mit einer MIDI-Spur <b>KEMPER</b>; eine bereits vorhandene KEMPER-Spur wird ersetzt. Die Befehle liegen als CC-Hüllkurven in MIDI-Clips. Dateiname: <code>&lt;Set&gt; (Kemper).als</code> bzw. <code>(Kemper &lt;Gerät&gt;)</code> bei mehreren Profilen.</p>
+<div class="note">Das exportierte Set in <b>denselben Ordner</b> wie das Original speichern, sonst findet Live die Audiodateien nicht. MIDI-Ausgang und Kanal der KEMPER-Spur werden aus <b>MIDI-Ausgang in Live</b> bzw. dem MIDI-Kanal übernommen; bei „Kein Ausgang“ in Live von Hand einstellen.</div>
+<h3>MIDI-Datei (.mid)</h3>
+<p>Standard-MIDI-Datei mit allen Events und Tempo-Map – zum Import in Live oder eine andere DAW.</p>
+<h3>Optionen</h3>
+<ul>
+<li><b>Zielgerät:</b> für welches Geräteprofil die Performance-Nummern aufgelöst werden. Fehlende Performances werden angezeigt und übersprungen.</li>
+<li><b>Impulslänge</b> (1/64, 1/32, 1/16 Schlag): Abstand der Hilfsnachrichten. Vorwahl (CC47) und NRPN-Adresse werden 2 Impulse vor dem Event gesendet, damit der eigentliche Befehl exakt auf der Position liegt. Bei Aussetzern eine längere Impulslänge wählen.</li>
+</ul>
+
+<h2 id="save">Speichern &amp; Projekte</h2>
+<ul>
+<li><b>Automatisch:</b> Events (pro Set-Dateiname), Geräteprofile, MIDI-Kanal, MIDI-Ports und Sprache werden im Browser gespeichert. Browserdaten löschen = Daten weg.</li>
+<li><b>Projekt speichern</b> (<kbd>Strg</kbd>+<kbd>S</kbd>): <code>&lt;Set&gt;.kemper.json</code> mit Events, Geräteprofilen und Kanal – zur Sicherung oder für einen anderen Rechner.</li>
+<li><b>Projekt laden…</b>: zuerst das zugehörige <code>.als</code> öffnen, dann die JSON laden.</li>
+</ul>
+
+<h2 id="keys">Tastenkürzel</h2>
+<table>
+<tr><th>Taste</th><th>Funktion</th></tr>
+<tr><td><kbd>Leertaste</kbd></td><td>Vorschau starten/stoppen</td></tr>
+<tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Cursor im Raster bewegen</td></tr>
+<tr><td><kbd>Pos1</kbd></td><td>Zum Songanfang</td></tr>
+<tr><td><kbd>F</kbd></td><td>Ganzen Song einpassen</td></tr>
+<tr><td><kbd>+</kbd> <kbd>-</kbd></td><td>Zoom am Cursor</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Gewähltes Event bearbeiten</td></tr>
+<tr><td><kbd>Entf</kbd> / <kbd>⌫</kbd></td><td>Auswahl löschen</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Auswahl aufheben</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>A</kbd> / <kbd>C</kbd> / <kbd>V</kbd></td><td>Alle wählen / Kopieren / am Cursor einfügen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd></td><td>Rückgängig / Wiederholen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td><td>Projekt speichern</td></tr>
+<tr><td><kbd>F1</kbd></td><td>Dieses Handbuch</td></tr>
+</table>
+
+<h2 id="ref">MIDI-Referenz</h2>
+<p>Laut <i>KEMPER PROFILER MIDI Parameter Documentation 11</i>. Schalter: Wert 1 = an, 0 = aus.</p>
+<table>
+<tr><th>Event</th><th>Nachricht</th></tr>
+<tr><td>Performance/Slot</td><td>CC47 = Performance − 1 (Vorwahl), dann CC50–54 = 1 (Slot 1–5)</td></tr>
+<tr><td>Effekt I / II / III / IIII</td><td>CC75 / 76 / 77 / 78</td></tr>
+<tr><td>Stomp A / B / C / D / X</td><td>CC17 / 18 / 19 / 20 / 22</td></tr>
+<tr><td>Mod, Delay, Delay+Tail</td><td>CC24, CC26, CC27</td></tr>
+<tr><td>Reverb, Reverb+Tail</td><td>CC28, CC29</td></tr>
+<tr><td>Rotary fast, Delay Infinity, Freeze</td><td>CC33, CC34, CC35</td></tr>
+<tr><td>Morph</td><td>CC80</td></tr>
+<tr><td>Tap Tempo</td><td>CC30 = 1 → 0</td></tr>
+<tr><td>Tuner</td><td>CC31</td></tr>
+<tr><td>Looper</td><td>NRPN Page 125, Parameter 88–94 (Rec/Play, Stop, Trigger, Reverse, Half Speed, Undo, Erase): 1 → 0</td></tr>
+</table>
+
+<h2 id="faq">Fehlerbehebung</h2>
+<table>
+<tr><th>Problem</th><th>Lösung</th></tr>
+<tr><td>„Web MIDI wird nicht unterstützt“</td><td>Chrome oder Edge verwenden.</td></tr>
+<tr><td>Namen auslesen klappt nicht</td><td>Eingang wählen, SysEx in den Website-Einstellungen erlauben, Kemper im Performance-Modus.</td></tr>
+<tr><td>Kemper reagiert nicht</td><td>MIDI-Kanal in AbleRigged/Live und am Kemper prüfen; „Tuner an/aus senden“ testen.</td></tr>
+<tr><td>Rote ⚠-Events</td><td>Performance-Name fehlt im aktiven Geräteprofil – Namen nachtragen oder auslesen.</td></tr>
+<tr><td>Live findet keine Audiodateien</td><td>Export im Ordner des Original-Sets speichern.</td></tr>
+<tr><td>Slot-Wechsel kommt zu spät/falsch</td><td>Impulslänge im Export erhöhen; prüfen, dass in Live keine weitere Spur denselben Kanal sendet.</td></tr>
+<tr><td>Events nach Neuladen weg</td><td>Set-Dateiname hat sich geändert oder Browserdaten wurden gelöscht – Projekt-JSON laden.</td></tr>
+</table>
+</section></main>
+<script>
+const main=document.getElementById('main'),links=[...document.querySelectorAll('nav a')];
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;e.preventDefault();
+  const t=document.getElementById(a.getAttribute('href').slice(1));if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
+main.addEventListener('scroll',()=>{let cur=links[0];for(const a of links){const t=document.getElementById(a.getAttribute('href').slice(1));if(t&&t.offsetTop-main.offsetTop<=main.scrollTop+40)cur=a}
+  links.forEach(a=>a.classList.toggle('on',a===cur))});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='F1'){e.preventDefault();parent.postMessage('closeHelp','*')}});
+</script>
+</body></html>
+</template>
+<template id="helpDocEn">
+<nav id="toc">
+<b>Able<span>Rigged</span> · Manual</b>
+<a href="#start">Overview</a>
+<a href="#req">Requirements</a>
+<a href="#quick">Quick start</a>
+<a href="#ui">The interface</a>
+<a href="#load">Loading a set</a>
+<a href="#perf">Devices &amp; performances</a>
+<a href="#events">Placing events</a>
+<a href="#edit">Editing events</a>
+<a href="#nav">Navigation &amp; zoom</a>
+<a href="#midi">MIDI connection</a>
+<a href="#scan">Reading names from the Kemper</a>
+<a href="#play">Preview playback</a>
+<a href="#export">Export</a>
+<a href="#save">Saving &amp; projects</a>
+<a href="#keys">Keyboard shortcuts</a>
+<a href="#ref">MIDI reference</a>
+<a href="#faq">Troubleshooting</a>
+</nav>
+<main id="main"><section>
+
+<h1 id="start">Able<b>Rigged</b> – Manual</h1>
+<p class="sub">Automate your Kemper in Ableton Live · by Thorsten Banning</p>
+<p>AbleRigged reads an Ableton Live set (<code>.als</code>), shows its arrangement as a timeline and lets you place Kemper commands on it: performance/slot changes, effects on/off, tuner, tap tempo, looper and arbitrary control changes. You export the result as an Ableton set with a ready-made <b>KEMPER</b> MIDI track or as a MIDI file – Live then switches the Kemper in sync with the song.</p>
+
+<h2 id="req">Requirements</h2>
+<ul>
+<li><b>Browser:</b> Google Chrome or Microsoft Edge (Web MIDI and save dialog). Firefox/Safari can edit and export sets but cannot establish a MIDI connection.</li>
+<li><b>Kemper Profiler</b> in <b>Performance mode</b>, connected to the computer via USB or a MIDI interface (only needed for preview and reading names).</li>
+<li><b>Ableton Live 11/12</b>; sets are read and written directly.</li>
+<li>To read names, the browser must allow <b>SysEx</b> (confirm the prompt when opening the MIDI dialog for the first time).</li>
+</ul>
+
+<h2 id="quick">Quick start</h2>
+<ol>
+<li>Click <b>Open ALS…</b> or drag the <code>.als</code> into the window.</li>
+<li>Open <b>Performances…</b> and enter the names of performances and slots – or read them from the Kemper via <b>MIDI…</b>.</li>
+<li>Click into the timeline to set the <b>cursor</b>.</li>
+<li>On the virtual <b>remote</b>, choose a performance (▲/▼) and press slot <b>1–5</b> – the event is placed at the cursor. Effects with <b>I–IIII</b> or the buttons under “More”.</li>
+<li>Press <kbd>Space</kbd> to play from the cursor and let the Kemper switch live (optional).</li>
+<li><b>Export…</b> → <b>Ableton set with KEMPER track</b> and save it into the folder of the original set.</li>
+<li>Choose <b>MIDI output in Live</b> in the export dialog – output and channel are stored in the track.</li>
+</ol>
+
+<h2 id="ui">The interface</h2>
+<h3>Header</h3>
+<table>
+<tr><th>Element</th><th>Function</th></tr>
+<tr><td>Open ALS…</td><td>Load an Ableton set.</td></tr>
+<tr><td>Save / Load project…</td><td>Save or restore events, device profiles and MIDI channel as <code>.kemper.json</code>.</td></tr>
+<tr><td>Device</td><td>Active device profile (e.g. “Head”, “Rack”) – each with its own performance list. “＋ New device…” creates a profile.</td></tr>
+<tr><td>Performances…</td><td>Edit names of performances, slots and effect buttons.</td></tr>
+<tr><td>Export…</td><td>Create a set with KEMPER track or a MIDI file.</td></tr>
+<tr><td>MIDI…</td><td>Connection to the Kemper. Dot: grey = none, yellow = output only, green = input and output.</td></tr>
+<tr><td>▶ / ■</td><td>Start / stop preview from the cursor.</td></tr>
+<tr><td>MIDI channel</td><td>Channel 1–16 the Kemper receives on.</td></tr>
+<tr><td>Grid</td><td>Snapping for cursor and moving: bar, 1/2 … 1/16 or off.</td></tr>
+<tr><td>Track height, Fit, ＋/－</td><td>Timeline display.</td></tr>
+<tr><td>Deutsch / English</td><td>User interface language (saved in the browser).</td></tr>
+</table>
+<h3>Timeline</h3>
+<p>At the top: ruler (bars), time signatures, locators and the <b>Kemper lane</b> with all events; below it the tracks and clips of the set in their Ableton colours. Fold/unfold group tracks via the track header. The status bar at the bottom shows cursor and mouse position (bar.beat.16th · time · tempo) and info about the event or clip under the mouse.</p>
+<h3>Remote</h3>
+<p>Replica of the PROFILER Remote. The display shows the performance/slot at the cursor, the LEDs the effect state at that position. Every button press creates an event at the cursor. To the right: <b>More</b> modules (Stomps A–D, X, Mod, Delay, Reverb, Morph, Rotary, Infinity, Freeze) and <b>+ CC…</b>.</p>
+<h3>Event list</h3>
+<p>All events in chronological order with position and the MIDI data sent. Click selects (<kbd>Ctrl</kbd>/<kbd>⇧</kbd> for multiple selection), double-click opens the editor. Buttons: Edit, Delete, Undo ↶, Redo ↷.</p>
+<p>You can drag the divider between the timeline and the lower area to change its height.</p>
+
+<h2 id="load">Loading a set</h2>
+<p>MIDI, audio and group tracks with their arrangement clips, locators, and tempo and time-signature automation of the master track are read. All positions are based on beats – tempo changes are converted to time correctly.</p>
+<div class="note">AbleRigged remembers the events for each set file name in the browser. If you load the same set again, the events reappear automatically (“events restored”).</div>
+
+<h2 id="perf">Devices &amp; performances</h2>
+<p>In the <b>Performances…</b> dialog you enter, for each performance (1–125), the name, the five slot names and optionally labels for the effect buttons I–IIII. Empty effect fields show stomp A–D of the active slot (Kemper default assignment), provided the assignment has been read.</p>
+<ul>
+<li><b>Count</b> sets how many performances are listed.</li>
+<li><b>Import/export JSON</b> saves a profile's list separately.</li>
+<li><b>Device profiles</b>: rename, copy as new profile or delete.</li>
+</ul>
+<h3>Multiple Kempers (Head, Rack …)</h3>
+<p>Performance changes store the performance <b>name</b>. When exporting for another device, the performance is looked up by name – if “Song X” is at position 12 on the Rack instead of 3, position 12 is sent automatically. If the name is missing on the target device, the event is marked red with ⚠ and skipped on export.</p>
+
+<h2 id="events">Placing events</h2>
+<p>Events are always created at the <b>cursor position</b>. An event of the same kind at exactly the same position is replaced.</p>
+<table>
+<tr><th>Button/action</th><th>Event</th></tr>
+<tr><td>▲ / ▼ (Perf)</td><td>Preselect a performance on the remote (no event yet).</td></tr>
+<tr><td>1 – 5</td><td><span class="dot" style="background:#ff9d2e"></span>Performance/slot change to the preselected performance.</td></tr>
+<tr><td>I – IIII, More</td><td><span class="dot" style="background:#3fbf5a"></span>Effect on / <span class="dot" style="background:#8a3a3a"></span>off – toggles the state at the cursor.</td></tr>
+<tr><td>TUNER</td><td><span class="dot" style="background:#5aa0d8"></span>Tuner on/off.</td></tr>
+<tr><td>TAP</td><td><span class="dot" style="background:#9a9a9a"></span>Tap tempo pulse.</td></tr>
+<tr><td>+ CC…</td><td><span class="dot" style="background:#a77be0"></span>Any control change (number and value freely selectable).</td></tr>
+<tr><td>LOOPER</td><td>Switches the remote to <b>looper mode</b> (LED green). Then: 1 = Rec/Play/Overdub, 2 = Stop (<kbd>⇧</kbd>+click = Erase), 3 = Trigger, 4 = Reverse, 5 = Half Speed, ▲ = Undo/Redo. <span class="dot" style="background:#2fb3a8"></span>LOOPER again = back.</td></tr>
+</table>
+<div class="note">If “Send remote clicks to the Kemper immediately” is enabled in the MIDI dialog, every new event is also sent directly to the Kemper – handy for auditioning.</div>
+
+<h2 id="edit">Editing events</h2>
+<ul>
+<li><b>Select:</b> click the event; <kbd>Ctrl</kbd>/<kbd>⇧</kbd>+click adds; drag in an empty Kemper lane = box selection; <kbd>Ctrl</kbd>+<kbd>A</kbd> = all.</li>
+<li><b>Move:</b> drag event(s) with the mouse – snaps to the selected grid.</li>
+<li><b>Edit:</b> double-click, <kbd>Enter</kbd> or “Edit”. Position as <code>bar.beat.16th</code>, type and parameters can be changed.</li>
+<li><b>Delete:</b> <kbd>Del</kbd>, right-click on the event or “Delete”.</li>
+<li><b>Copy/paste:</b> <kbd>Ctrl</kbd>+<kbd>C</kbd>, set the cursor, <kbd>Ctrl</kbd>+<kbd>V</kbd> – spacing is preserved.</li>
+<li><b>Undo:</b> <kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd> (up to 200 steps).</li>
+</ul>
+
+<h2 id="nav">Navigation &amp; zoom</h2>
+<table>
+<tr><th>Action</th><th>Control</th></tr>
+<tr><td>Set cursor</td><td>Click into the timeline (dragging possible); clicking a locator jumps there.</td></tr>
+<tr><td>Step cursor</td><td><kbd>←</kbd> / <kbd>→</kbd> by grid; <kbd>Home</kbd> = song start.</td></tr>
+<tr><td>Scroll</td><td>Mouse wheel (vertical), <kbd>⇧</kbd>+mouse wheel (horizontal), scrollbar at the bottom.</td></tr>
+<tr><td>Pan</td><td>Middle mouse button or <kbd>Alt</kbd>+drag.</td></tr>
+<tr><td>Zoom</td><td><kbd>Ctrl</kbd>+mouse wheel, <kbd>+</kbd>/<kbd>-</kbd>, buttons ＋/－; <kbd>F</kbd> = fit whole song.</td></tr>
+</table>
+
+<h2 id="midi">MIDI connection</h2>
+<ol>
+<li>Open <b>MIDI…</b> and allow the browser prompt (incl. SysEx).</li>
+<li>Choose <b>Output (→ Kemper)</b> and <b>Input (← Kemper)</b>. The selection is saved.</li>
+<li>With input and output, AbleRigged starts the Kemper's bidirectional mode (beacon every 5 s).</li>
+<li><b>Diagnostics:</b> “Read rig name” checks the return direction, “Send tuner on/off” the send direction. The log shows the MIDI traffic.</li>
+</ol>
+<p><b>Options:</b> “Send remote clicks immediately” (see above) and “On playback, first send the state at the cursor” – before the preview, restores performance/slot and effects as they should be at the start position.</p>
+
+<h2 id="scan">Reading names from the Kemper</h2>
+<p>At the bottom of the MIDI dialog (requires input + SysEx). The names are stored in the active device profile.</p>
+<ul>
+<li><b>Current perf.:</b> reads the currently loaded performance and stores it under the given number.</li>
+<li><b>Read range:</b> from–to; with “Load performance while reading” each performance is actively selected.</li>
+<li><b>Also read stomp assignment:</b> loads every slot and reads the effect types (approx. 5 s per performance). Afterwards the remote and “More” show the real effect names.</li>
+<li>“Cancel” stops the scan at any time.</li>
+</ul>
+
+<h2 id="play">Preview playback</h2>
+<p><kbd>Space</kbd> or ▶ starts from the cursor; the cursor runs at song tempo (incl. tempo automation) and sends each event to the Kemper at the right time. Ableton itself does not run along – the preview is for testing the switching.</p>
+
+<h2 id="export">Export</h2>
+<h3>Ableton set with KEMPER track (.als)</h3>
+<p>Creates a copy of the set with a MIDI track <b>KEMPER</b>; an existing KEMPER track is replaced. The commands are stored as CC envelopes in MIDI clips. File name: <code>&lt;Set&gt; (Kemper).als</code> or <code>(Kemper &lt;device&gt;)</code> with multiple profiles.</p>
+<div class="note">Save the exported set in the <b>same folder</b> as the original, otherwise Live won't find the audio files. MIDI output and channel of the KEMPER track are taken from <b>MIDI output in Live</b> and the MIDI channel; with “No output”, set them manually in Live.</div>
+<h3>MIDI file (.mid)</h3>
+<p>Standard MIDI file with all events and tempo map – for import into Live or another DAW.</p>
+<h3>Options</h3>
+<ul>
+<li><b>Target device:</b> the device profile used to resolve performance numbers. Missing performances are listed and skipped.</li>
+<li><b>Pulse length</b> (1/64, 1/32, 1/16 beat): spacing of the helper messages. Preselect (CC47) and NRPN address are sent 2 pulses before the event so the actual command lands exactly on the position. If commands get lost, choose a longer pulse length.</li>
+</ul>
+
+<h2 id="save">Saving &amp; projects</h2>
+<ul>
+<li><b>Automatic:</b> events (per set file name), device profiles, MIDI channel, MIDI ports and language are stored in the browser. Clearing browser data = data gone.</li>
+<li><b>Save project</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>): <code>&lt;Set&gt;.kemper.json</code> with events, device profiles and channel – for backup or another computer.</li>
+<li><b>Load project…</b>: first open the matching <code>.als</code>, then load the JSON.</li>
+</ul>
+
+<h2 id="keys">Keyboard shortcuts</h2>
+<table>
+<tr><th>Key</th><th>Function</th></tr>
+<tr><td><kbd>Space</kbd></td><td>Start/stop preview</td></tr>
+<tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Move cursor by grid</td></tr>
+<tr><td><kbd>Home</kbd></td><td>Go to song start</td></tr>
+<tr><td><kbd>F</kbd></td><td>Fit whole song</td></tr>
+<tr><td><kbd>+</kbd> <kbd>-</kbd></td><td>Zoom at cursor</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Edit selected event</td></tr>
+<tr><td><kbd>Del</kbd> / <kbd>⌫</kbd></td><td>Delete selection</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Clear selection</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>C</kbd> / <kbd>V</kbd></td><td>Select all / copy / paste at cursor</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Y</kbd></td><td>Undo / redo</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Save project</td></tr>
+<tr><td><kbd>F1</kbd></td><td>This manual</td></tr>
+</table>
+
+<h2 id="ref">MIDI reference</h2>
+<p>According to <i>KEMPER PROFILER MIDI Parameter Documentation 11</i>. Switches: value 1 = on, 0 = off.</p>
+<table>
+<tr><th>Event</th><th>Message</th></tr>
+<tr><td>Performance/slot</td><td>CC47 = performance − 1 (preselect), then CC50–54 = 1 (slot 1–5)</td></tr>
+<tr><td>Effect I / II / III / IIII</td><td>CC75 / 76 / 77 / 78</td></tr>
+<tr><td>Stomp A / B / C / D / X</td><td>CC17 / 18 / 19 / 20 / 22</td></tr>
+<tr><td>Mod, Delay, Delay+Tail</td><td>CC24, CC26, CC27</td></tr>
+<tr><td>Reverb, Reverb+Tail</td><td>CC28, CC29</td></tr>
+<tr><td>Rotary fast, Delay Infinity, Freeze</td><td>CC33, CC34, CC35</td></tr>
+<tr><td>Morph</td><td>CC80</td></tr>
+<tr><td>Tap tempo</td><td>CC30 = 1 → 0</td></tr>
+<tr><td>Tuner</td><td>CC31</td></tr>
+<tr><td>Looper</td><td>NRPN page 125, parameter 88–94 (Rec/Play, Stop, Trigger, Reverse, Half Speed, Undo, Erase): 1 → 0</td></tr>
+</table>
+
+<h2 id="faq">Troubleshooting</h2>
+<table>
+<tr><th>Problem</th><th>Solution</th></tr>
+<tr><td>“Web MIDI is not supported”</td><td>Use Chrome or Edge.</td></tr>
+<tr><td>Reading names doesn't work</td><td>Select an input, allow SysEx in the site settings, Kemper in Performance mode.</td></tr>
+<tr><td>Kemper doesn't respond</td><td>Check the MIDI channel in AbleRigged/Live and on the Kemper; test “Send tuner on/off”.</td></tr>
+<tr><td>Red ⚠ events</td><td>Performance name missing in the active device profile – add or read the names.</td></tr>
+<tr><td>Live can't find audio files</td><td>Save the export in the folder of the original set.</td></tr>
+<tr><td>Slot change comes late/wrong</td><td>Increase the pulse length in the export; make sure no other track in Live sends on the same channel.</td></tr>
+<tr><td>Events gone after reloading</td><td>The set file name changed or browser data was cleared – load the project JSON.</td></tr>
+</table>
+</section></main>
+</template>
+
+<script>
+'use strict';
+/* ================= Sprache (DE/EN) ================= */
+let LANG=(()=>{try{const l=localStorage.getItem('kt:lang');if(l==='de'||l==='en')return l}catch{}return /^de/i.test(navigator.language||'')?'de':'en'})();
+const T=(de,en)=>LANG==='en'?en:de;
+const onOff=v=>v?T('an','on'):T('aus','off');
+/* ================= Ableton-Farbpalette (Live 11/12, Index 0–69) ================= */
+const LIVE_COLORS=['#FF94A6','#FFA529','#CC9927','#F7F47C','#BFFB00','#1AFF2F','#25FFA8','#5CFFE8','#8BC5FF','#5480E4','#92A7FF','#D86CE4','#E553A0','#FFFFFF',
+'#FF3636','#F66C03','#99724B','#FFF034','#87FF67','#3DC300','#00BFAF','#19E9FF','#10A4EE','#007DC0','#886CE4','#B677C6','#FF39D4','#D0D0D0',
+'#E2675A','#FFA374','#D3AD71','#EDFFAE','#D2E498','#BAD074','#9BC48D','#D4FDE1','#CDF1F8','#B9C1E3','#CDBBE4','#AE98E5','#E5DCE1','#A9A9A9',
+'#C6928B','#B78256','#99836A','#BFBA69','#A6BE00','#7DB04D','#88C2BA','#9BB3C4','#85A5C2','#8393CC','#A595B5','#BF9FBE','#BC7196','#7B7B7B',
+'#AF3333','#A95131','#724F41','#DBC300','#85961F','#539F31','#0A9C8E','#236384','#1A2F96','#2F52A2','#624BAD','#A34BAD','#CC2E6E','#3C3C3C'];
+const liveColor=i=>LIVE_COLORS[i]??'#888';
+
+/* ================= Kemper-Definitionen ================= */
+// Effekt-/Modul-Schalter: CC-Nummer (Wert 127 = an, 0 = aus)
+// Werte lt. KEMPER PROFILER MIDI Parameter Documentation 11: Schalter 1 = an, 0 = aus
+const FX={I:{cc:75,label:'I'},II:{cc:76,label:'II'},III:{cc:77,label:'III'},IV:{cc:78,label:'IIII'},
+  A:{cc:17,label:'Stomp A'},B:{cc:18,label:'Stomp B'},C:{cc:19,label:'Stomp C'},D:{cc:20,label:'Stomp D'},
+  X:{cc:22,label:'Stomp X'},MOD:{cc:24,label:'Mod'},DLY:{cc:26,label:'Delay'},DLYT:{cc:27,label:'Delay+Tail'},
+  REV:{cc:28,label:'Reverb'},REVT:{cc:29,label:'Reverb+Tail'},MORPH:{cc:80,label:'Morph'},ROT:{cc:33,label:'Rotary fast'},
+  INF:{cc:34,label:'Delay Infinity'},FRZ:{cc:35,label:'Freeze'}};
+// Effekt-Typen lt. KEMPER PROFILER MIDI Parameter Documentation, Appendix B (Wert -> Name)
+const FX_TYPES=Object.fromEntries(('0:–,1:Wah Wah,2:Wah Low Pass,3:Wah High Pass,4:Wah Vowel Filter,6:Wah Phaser,7:Wah Flanger,8:Wah Rate Reducer,9:Wah Ring Modulator,10:Wah Freq Shifter,11:Pedal Pitch,12:Wah Formant Shifter,13:Pedal Vinyl Stop,'+
+ '17:Bit Shaper,18:Octa Shaper,19:Soft Shaper,20:Hard Shaper,21:Wave Shaper,32:Kemper Drive,33:Green Scream,34:Plus DS,35:One DS,36:Muffin,37:Mouse,38:Kemper Fuzz,39:Metal DS,42:Full OC,49:Compressor,50:Auto Swell,57:Noise Gate 2:1,58:Noise Gate 4:1,'+
+ '64:Space,65:Vintage Chorus,66:Hyper Chorus,67:Air Chorus,68:Vibrato,69:Rotary Speaker,70:Tremolo,71:Micro Pitch,81:Phaser,82:Phaser Vibe,83:Phaser Oneway,89:Flanger,91:Flanger Oneway,97:Graphic Equalizer,98:Studio Equalizer,99:Metal Equalizer,'+
+ '100:Acoustic Simulator,101:Stereo Widener,102:Phase Widener,103:Delay Widener,104:Double Tracker,113:Treble Booster,114:Lead Booster,115:Pure Booster,116:Wah Pedal Booster,121:Loop Mono,122:Loop Stereo,123:Loop Distortion,'+
+ '129:Transpose,130:Chromatic Pitch,131:Harmonic Pitch,132:Analog Octaver,137:Dual Chromatic,138:Dual Harmonic,139:Dual Crystal,140:Dual Loop Pitch,145:Legacy Delay,146:Single Delay,147:Dual Delay,148:Two Tap Delay,149:Serial TwoTap Delay,'+
+ '150:Crystal Delay,151:Loop Pitch Delay,152:Freq Shifter Delay,161:Rhythm Delay,162:Melody Chromatic,163:Melody Harmonic,164:Quad Delay,165:Quad Chromatic,166:Quad Harmonic,177:Legacy Reverb,178:Natural Reverb,179:Easy Reverb,180:Echo Reverb,'+
+ '181:Cirrus Reverb,182:Formant Reverb,183:Ionosphere Reverb,193:Spring Reverb').split(',').map(x=>{const i=x.indexOf(':');return [+x.slice(0,i),x.slice(i+1)]}));
+// NRPN-Adressseiten der Effektmodule
+const FX_PAGES={A:0x32,B:0x33,C:0x34,D:0x35,X:0x38,MOD:0x3A,DLY:0x3C,REV:0x3D};
+const PAGE_FX=Object.fromEntries(Object.entries(FX_PAGES).map(([k,v])=>[v,k]));
+const STOMP_OF={DLYT:'DLY',REVT:'REV'}; // Varianten mit Tail gehören zum selben Modul
+const MOD_KEYS=['A','B','C','D','X','MOD','DLY','DLYT','REV','REVT','MORPH','ROT','INF','FRZ'];
+// Looper: NRPN Adresspage 125 ($7D), Wert 1 = drücken, 0 = loslassen
+const LOOPER={88:'Rec/Play/Overdub',89:'Stop',90:'Trigger',91:'Reverse',92:'Half Speed',93:'Undo/Redo Overdub',94:'Erase'};
+// Looper-Funktionen der Remote-Taster im Looper-Modus
+const LOOPER_KEYS={'1':[88,'● ▶ Rec/Play'],'2':[89,'■ Stop (⇧ Erase)'],'3':[90,'|▶ Trigger'],'4':[91,'◀ Reverse'],'5':[92,'½ Half Speed'],'UP':[93,'⤺ Undo']};
+// PROFILER Remote MK1 (lt. Foto): oben Display + LOOPER/TUNER, Mitte ▲▼ + I–IIII, unten 1–5 + TAP
+const REMOTE_LAYOUT={top:['LOOPER','TUNER'],mid:['UP','DOWN','I','II','III','IV'],bottom:['1','2','3','4','5','TAP']};
+const EV_COLORS={pc:'#ff9d2e',fxOn:'#3fbf5a',fxOff:'#8a3a3a',tap:'#9a9a9a',tuner:'#5aa0d8',looper:'#2fb3a8',cc:'#a77be0'};
+
+/* ================= ALS lesen & parsen ================= */
+async function readAlsFile(file){
+  const buf=await file.arrayBuffer(), u8=new Uint8Array(buf);
+  if(u8[0]===0x1f&&u8[1]===0x8b){
+    const s=new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return await new Response(s).text();
+  }
+  return new TextDecoder().decode(u8);
+}
+function ch(el,path){
+  for(const tag of path.split('/')){
+    if(!el)return null;
+    let f=null;for(const c of el.children)if(c.tagName===tag){f=c;break}
+    el=f;
+  }
+  return el;
+}
+const val=(el,path)=>{const n=path?ch(el,path):el;return n?n.getAttribute('Value'):null};
+const num=(el,path,d=0)=>{const v=val(el,path);return v==null?d:parseFloat(v)};
+
+function parseAls(text){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  if(doc.querySelector('parsererror'))throw new Error(T('Keine gültige ALS/XML-Datei','Not a valid ALS/XML file'));
+  const root=doc.documentElement, ls=ch(root,'LiveSet');
+  if(root.tagName!=='Ableton'||!ls)throw new Error(T('Keine Ableton-Live-Datei','Not an Ableton Live file'));
+  const set={creator:root.getAttribute('Creator')||'',tracks:[],locators:[],tempo:[],sigs:[]};
+  for(const t of ch(ls,'Tracks').children){
+    const kind=t.tagName; if(!/^(Midi|Audio|Group)Track$/.test(kind))continue;
+    const tr={id:t.getAttribute('Id'),kind:kind.replace('Track','').toLowerCase(),
+      name:val(t,'Name/EffectiveName')||val(t,'Name/UserName')||kind,
+      color:liveColor(num(t,'Color',num(t,'ColorIndex',55))),
+      group:val(t,'TrackGroupId')||'-1',
+      unfolded:val(t,'TrackUnfolded')!=='false',clips:[]};
+    const seq=ch(t,'DeviceChain/MainSequencer');
+    const ev=seq&&(ch(seq,'ClipTimeable/ArrangerAutomation/Events')||ch(seq,'Sample/ArrangerAutomation/Events'));
+    if(ev)for(const c of ev.children){
+      const start=parseFloat(c.getAttribute('Time')??val(c,'CurrentStart'));
+      tr.clips.push({start,end:num(c,'CurrentEnd',start),name:val(c,'Name')||'',
+        color:liveColor(num(c,'Color',num(c,'ColorIndex',55))),disabled:val(c,'Disabled')==='true',
+        type:c.tagName==='MidiClip'?'midi':'audio'});
+    }
+    tr.clips.sort((a,b)=>a.start-b.start);
+    set.tracks.push(tr);
+  }
+  const locs=ch(ls,'Locators/Locators');
+  if(locs)for(const l of locs.children)set.locators.push({time:num(l,'Time'),name:val(l,'Name')||''});
+  set.locators.sort((a,b)=>a.time-b.time);
+  const m=ch(ls,'MasterTrack')||ch(ls,'MainTrack');
+  const mix=m&&ch(m,'DeviceChain/Mixer');
+  const envFor=target=>{
+    const id=target&&ch(target,'AutomationTarget')?.getAttribute('Id');
+    const envs=m&&ch(m,'AutomationEnvelopes/Envelopes');
+    if(!id||!envs)return null;
+    for(const e of envs.children)if(val(e,'EnvelopeTarget/PointeeId')===id)return ch(e,'Automation/Events');
+    return null;
+  };
+  const tNode=mix&&ch(mix,'Tempo'), sNode=mix&&ch(mix,'TimeSignature');
+  const tEv=envFor(tNode), sEv=envFor(sNode);
+  set.tempo=tEv?[...tEv.children].map(e=>({b:Math.max(0,parseFloat(e.getAttribute('Time'))),bpm:parseFloat(e.getAttribute('Value'))}))
+               :[{b:0,bpm:num(tNode,'Manual',120)}];
+  const decSig=v=>({num:v%99+1,den:2**Math.floor(v/99)});
+  set.sigs=(sEv?[...sEv.children].map(e=>({b:Math.max(0,parseFloat(e.getAttribute('Time'))),...decSig(parseInt(e.getAttribute('Value')))}))
+               :[{b:0,...decSig(num(sNode,'Manual',201))}]);
+  set.sigs=set.sigs.filter((s,i,a)=>!(a[i+1]&&a[i+1].b===s.b));
+  if(!set.tempo.length)set.tempo=[{b:0,bpm:120}];
+  if(!set.sigs.length)set.sigs=[{b:0,num:4,den:4}];
+  return set;
+}
+
+/* ================= Zeit-Modell: Takte & Tempo ================= */
+function buildTimeModel(set){
+  const clipEnd=Math.max(0,...set.tracks.flatMap(t=>t.clips.map(c=>c.end)));
+  const locEnd=Math.max(0,...set.locators.map(l=>l.time));
+  set.contentEnd=clipEnd;
+  set.end=Math.max(clipEnd,locEnd)+16;
+  const bars=[]; let no=1;
+  set.sigs.forEach((s,i)=>{
+    const next=i+1<set.sigs.length?set.sigs[i+1].b:set.end+64, len=s.num*4/s.den;
+    for(let b=s.b;b<next-1e-6;b+=len)bars.push({b,no:no++,num:s.num,den:s.den,len});
+  });
+  set.bars=bars;
+  const tp=[...set.tempo].sort((a,b)=>a.b-b.b);
+  if(tp[0].b>0)tp.unshift({b:0,bpm:tp[0].bpm});
+  let acc=0;tp.forEach((p,i)=>{p.sec=acc;const n=tp[i+1];if(n)acc+=segSec(p,n,n.b-p.b)});
+  set.tempoPts=tp;
+}
+function segSec(p,n,x){
+  if(n.b===p.b||n.bpm===p.bpm)return 60/p.bpm*x;
+  const k=(n.bpm-p.bpm)/(n.b-p.b);
+  return 60/k*Math.log((p.bpm+k*x)/p.bpm);
+}
+function beatToSec(set,beat){
+  const tp=set.tempoPts;let i=tp.length-1;while(i>0&&tp[i].b>beat)i--;
+  const p=tp[i],n=tp[i+1];
+  return p.sec+(n?segSec(p,n,beat-p.b):60/p.bpm*(beat-p.b));
+}
+function tempoAt(set,beat){
+  const tp=set.tempoPts;let i=tp.length-1;while(i>0&&tp[i].b>beat)i--;
+  const p=tp[i],n=tp[i+1];
+  return n&&n.b>p.b?p.bpm+(n.bpm-p.bpm)*(beat-p.b)/(n.b-p.b):p.bpm;
+}
+function barIndexAt(set,beat){
+  const B=set.bars;let lo=0,hi=B.length-1;
+  while(lo<hi){const mid=(lo+hi+1)>>1;if(B[mid].b<=beat+1e-9)lo=mid;else hi=mid-1}
+  return lo;
+}
+function beatToBBT(set,beat){
+  const bar=set.bars[barIndexAt(set,beat)], unit=4/bar.den, rel=(beat-bar.b)/unit;
+  const bt=Math.floor(rel+1e-9), six=Math.floor((rel-bt)*unit*4+1e-6);
+  return `${bar.no}.${bt+1}.${six+1}`;
+}
+function bbtToBeat(set,str){
+  const p=String(str).trim().split(/[.:,\s]+/).map(Number);
+  if(!p[0]||p.some(isNaN))return null;
+  const bar=set.bars[Math.min(set.bars.length-1,p[0]-1)],unit=4/bar.den;
+  return bar.b+((p[1]||1)-1)*unit+((p[2]||1)-1)*0.25;
+}
+function fmtSec(s){const m=Math.floor(s/60),r=s-m*60;return `${m}:${r.toFixed(1).padStart(4,'0')}`}
+function snapBeat(set,beat,mode){
+  if(mode==='0')return beat;
+  const i=barIndexAt(set,beat), bar=set.bars[i];
+  if(mode==='bar'){const nx=set.bars[i+1];return nx&&beat-bar.b>nx.b-beat?nx.b:bar.b}
+  const g=parseFloat(mode);return bar.b+Math.round((beat-bar.b)/g)*g;
+}
+function stepBeat(set,beat,mode,dir){
+  if(mode==='bar'||mode==='0'){const i=barIndexAt(set,beat)+(dir>0?1:(set.bars[barIndexAt(set,beat)].b<beat-1e-9?0:-1));return set.bars[Math.max(0,Math.min(set.bars.length-1,i))].b}
+  return Math.max(0,snapBeat(set,beat,mode)+dir*parseFloat(mode));
+}
+
+/* ================= State ================= */
+const S={set:null,raw:null,fileName:'',
+  view:{ppb:12,sx:0,sy:0},
+  cursor:0,snap:'bar',trackH:34,collapsed:new Set(),hover:null,
+  events:[],sel:new Set(),performances:[],channel:1,
+  browsePerf:null,looperMode:false,clipboard:null,undo:[],redo:[]
+};
+let evSeq=1;
+const L={HEAD:200,RULER:26,SIG:16,LOC:20,SCROLL:12,GROUP:22,EVROW:17};
+function kemperH(){
+  const cnt={};let mx=1;
+  for(const e of S.events){const k=e.beat.toFixed(4);cnt[k]=(cnt[k]||0)+1;if(cnt[k]>mx)mx=cnt[k]}
+  return Math.max(44,8+mx*L.EVROW);
+}
+const topH=()=>L.RULER+L.SIG+L.LOC+kemperH();
+
+/* ================= Performances ================= */
+function perf(no){return S.performances[no-1]||{name:'',slots:['','','','',''],fx:['','','','']}}
+function perfName(no){const p=perf(no);return p.name||`Performance ${no}`}
+function slotName(no,s){return perf(no).slots[s-1]||`Slot ${s}`}
+function ensurePerfs(n){while(S.performances.length<n)S.performances.push({name:'',slots:['','','','',''],fx:['','','','']})}
+// ---- Geräteprofile (z. B. Head, Rack): jedes Gerät hat eine eigene Performance-Liste.
+// PC-Events merken sich den Performance-Namen (pname); die Nummer wird je Gerät über den Namen aufgelöst.
+S.devices=[];S.devId=null;
+function curDev(){return S.devices.find(d=>d.id===S.devId)||S.devices[0]}
+function devById(id){return S.devices.find(d=>d.id===id)||curDev()}
+function setPerfs(arr){curDev().performances=arr;S.performances=arr}
+function useDevice(id){S.devId=id;S.performances=curDev().performances;S.browsePerf=null;savePerfsLocal();renderDevSel();attachNames();renderRemote();renderEvList();req()}
+function savePerfsLocal(){try{localStorage.setItem('kt:devices',JSON.stringify({devices:S.devices,active:S.devId}))}catch{}}
+function loadPerfsLocal(){
+  try{const d=JSON.parse(localStorage.getItem('kt:devices')||'null');
+    if(d&&Array.isArray(d.devices)&&d.devices.length){S.devices=d.devices;S.devId=d.active}
+    else{const p=JSON.parse(localStorage.getItem('kt:performances')||'null');S.devices=[{id:'head',name:'Head',performances:Array.isArray(p)?p:[]}];S.devId='head'}}
+  catch{S.devices=[{id:'head',name:'Head',performances:[]}];S.devId='head'}
+  if(!S.devices.some(d=>d.id===S.devId))S.devId=S.devices[0].id;
+  S.performances=curDev().performances;
+}
+const normName=s=>String(s||'').trim().toLowerCase();
+// Performance-Nummer eines PC-Events auf einem Gerät (null = Name dort nicht vorhanden)
+function resolvePerf(e,dev=curDev()){
+  if(!e.pname)return e.perf;
+  const L=dev.performances,n=normName(e.pname);
+  if(normName(L[e.perf-1]?.name)===n)return e.perf;
+  const i=L.findIndex(p=>normName(p.name)===n);return i>=0?i+1:null;
+}
+// Bestehenden PC-Events ohne Namen den Namen vom aktiven Gerät zuordnen
+function attachNames(){let ch=false;for(const e of S.events)if(e.type==='pc'&&!e.pname){const n=perf(e.perf).name;if(n){e.pname=n;ch=true}}if(ch)saveSongLocal()}
+function missingOn(dev){return S.events.filter(e=>e.type==='pc'&&resolvePerf(e,dev)==null)}
+
+/* ================= Events ================= */
+// Typen: pc{perf,slot} · fx{key,on} · tap · tuner{on} · looper{action} · cc{cc,value}
+function evLabel(e,short,dev=curDev()){
+  switch(e.type){
+    case 'pc':{const pn=resolvePerf(e,dev);
+      if(pn==null)return short?`⚠ ${e.pname}·${e.slot}`:T(`⚠ „${e.pname}“ fehlt auf ${dev.name} · Slot ${e.slot}`,`⚠ “${e.pname}” missing on ${dev.name} · Slot ${e.slot}`);
+      const P=dev.performances[pn-1]||{},sn=(P.slots||[])[e.slot-1]||`Slot ${e.slot}`,pnm=P.name||`Performance ${pn}`;
+      return short?`P${pn}·${e.slot} ${sn}`:T(`Perf ${pn} „${pnm}“ · Slot ${e.slot} „${sn}“`,`Perf ${pn} “${pnm}” · Slot ${e.slot} “${sn}”`)}
+    case 'fx':return `${FX[e.key].label} ${onOff(e.on)}`;
+    case 'tap':return 'TAP';
+    case 'tuner':return `Tuner ${onOff(e.on)}`;
+    case 'looper':return `Looper ${LOOPER[e.action]}`;
+    case 'cc':return `CC${e.cc} = ${e.value}`;
+  }
+  return e.type;
+}
+function evColor(e){if(e.type==='pc'&&resolvePerf(e)==null)return '#d04040';return e.type==='fx'?(e.on?EV_COLORS.fxOn:EV_COLORS.fxOff):EV_COLORS[e.type]||'#888'}
+// MIDI-Nachrichten je Event: [{dt (Beats nach Event), msg:[status,d1,(d2)]}]
+function evMidi(e,chn=S.channel,dev=curDev()){
+  const c=(chn-1)&15,CC=(n,v,dt=0)=>({dt,msg:[0xB0|c,n,v]});
+  switch(e.type){
+    // Performance-Mode: CC47 = Performance vorwählen (0–124), CC50–54 = Slot laden
+    case 'pc':{const pn=resolvePerf(e,dev);return pn==null?[]:[CC(47,pn-1),CC(49+e.slot,1)]}
+    case 'fx':return [CC(FX[e.key].cc,e.on?1:0)];
+    case 'tap':return [CC(30,1),CC(30,0,0.0625)];
+    case 'tuner':return [CC(31,e.on?1:0)];
+    case 'looper':return [CC(99,125),CC(98,e.action),CC(6,0),CC(38,1),CC(6,0,0.0625),CC(38,0,0.0625)];
+    case 'cc':return [CC(e.cc,e.value)];
+  }
+  return [];
+}
+function midiText(e){
+  const m=evMidi(e);if(e.type==='pc'&&!m.length)return T('– (nicht auf diesem Gerät)','– (not on this device)');if(e.type==='looper')return `NRPN 125/${e.action} = 1 → 0`;
+  return m.map(({dt,msg})=>`${dt?'→ ':''}CC${msg[1]}=${msg[2]}`).join(' · ');
+}
+function sortEvents(){S.events.sort((a,b)=>a.beat-b.beat||a.id-b.id)}
+function stateAt(beat){
+  const st={perf:null,slot:null,fx:{},tuner:false,stomps:null};
+  for(const e of S.events){
+    if(e.beat>beat+1e-9)break;
+    if(e.type==='pc'){st.perf=resolvePerf(e);st.slot=st.perf?e.slot:null;st.fx={};st.stomps=null;
+      const sb=st.perf&&perf(st.perf).stomps?.[e.slot-1];
+      if(sb){st.stomps=sb;for(const k in sb)if(sb[k].type)st.fx[k]=!!sb[k].on;st.fx.DLYT=st.fx.DLY;st.fx.REVT=st.fx.REV}}
+    else if(e.type==='fx'){st.fx[e.key]=e.on;const m=STOMP_OF[e.key]||(e.key==='DLY'?'DLYT':e.key==='REV'?'REVT':null);if(m)st.fx[m]=e.on}
+    else if(e.type==='tuner')st.tuner=e.on;
+  }
+  return st;
+}
+function snapshot(){S.undo.push(JSON.stringify(S.events));if(S.undo.length>200)S.undo.shift();S.redo=[]}
+function restore(json){S.events=JSON.parse(json);S.sel.clear();changed(false)}
+function undo(){if(!S.undo.length)return;S.redo.push(JSON.stringify(S.events));restore(S.undo.pop())}
+function redo(){if(!S.redo.length)return;S.undo.push(JSON.stringify(S.events));restore(S.redo.pop())}
+function addEvent(ev,{replaceSame=true}={}){
+  snapshot();
+  ev.beat=Math.max(0,ev.beat);ev.id=evSeq++;
+  if(replaceSame){
+    const same=x=>Math.abs(x.beat-ev.beat)<1e-6&&x.type===ev.type&&(ev.type!=='fx'||x.key===ev.key)&&(ev.type!=='cc'||x.cc===ev.cc);
+    S.events=S.events.filter(x=>!same(x));
+  }
+  S.events.push(ev);S.sel=new Set([ev.id]);changed();
+  if(MIDI.thru&&MIDI.out)sendEvent(ev,performance.now());
+}
+function deleteSelected(){if(!S.sel.size)return;snapshot();S.events=S.events.filter(e=>!S.sel.has(e.id));S.sel.clear();changed()}
+function changed(persist=true){
+  if(PLAY.on)PLAY.idx=S.events.findIndex(e=>e.beat>PLAY.pos+1e-9),PLAY.idx<0&&(PLAY.idx=S.events.length);
+  sortEvents();clampView();renderEvList();renderRemote();req();
+  if(persist)saveSongLocal();
+}
+function songKey(){return 'kt:song:'+S.fileName}
+function saveSongLocal(){if(!S.fileName)return;try{localStorage.setItem(songKey(),JSON.stringify({events:S.events,channel:S.channel}))}catch{}}
+function loadSongLocal(){try{const d=JSON.parse(localStorage.getItem(songKey())||'null');if(d){S.events=d.events||[];return true}}catch{}return false}
+
+/* ================= Canvas ================= */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),wrap=document.getElementById('wrap');
+let W=0,H=0,dirty=true;
+function resize(){const r=wrap.getBoundingClientRect(),d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);clampView();dirty=true}
+new ResizeObserver(resize).observe(wrap);
+const bx=b=>L.HEAD+(b*S.view.ppb)-S.view.sx;
+const xb=x=>(x-L.HEAD+S.view.sx)/S.view.ppb;
+const req=()=>{dirty=true};
+
+function visibleRows(){
+  if(!S.set)return[];
+  const byId=Object.fromEntries(S.set.tracks.map(t=>[t.id,t]));
+  const hidden=t=>{let g=t.group;while(g&&g!=='-1'){if(S.collapsed.has(g))return true;g=byId[g]?.group}return false};
+  const depth=t=>{let d=0,g=t.group;while(g&&g!=='-1'){d++;g=byId[g]?.group}return d};
+  let y=0;const rows=[];
+  for(const t of S.set.tracks){if(hidden(t))continue;const h=t.kind==='group'?L.GROUP:S.trackH;rows.push({t,y,h,depth:depth(t)});y+=h}
+  return rows;
+}
+function contentH(){const r=visibleRows();return r.length?r.at(-1).y+r.at(-1).h:0}
+function clampView(){
+  if(!S.set)return;
+  const vw=W-L.HEAD, maxX=Math.max(0,S.set.end*S.view.ppb-vw+40);
+  S.view.sx=Math.max(0,Math.min(maxX,S.view.sx));
+  const vh=H-topH()-L.SCROLL, maxY=Math.max(0,contentH()-vh);
+  S.view.sy=Math.max(0,Math.min(maxY,S.view.sy));
+}
+function zoomAt(f,x){
+  if(!S.set)return;
+  x??=L.HEAD+(W-L.HEAD)/2;const b=xb(x);
+  S.view.ppb=Math.max(0.3,Math.min(400,S.view.ppb*f));
+  S.view.sx=b*S.view.ppb-(x-L.HEAD);
+  clampView();req();
+}
+function fit(){if(!S.set)return;S.view.ppb=Math.max(0.3,(W-L.HEAD-30)/S.set.end);S.view.sx=0;clampView();req()}
+function revealBeat(b){const x=bx(b);if(x<L.HEAD+20||x>W-40)S.view.sx+=x-(L.HEAD+(W-L.HEAD)/3);clampView()}
+
+function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
+  if(f<0){r*=1+f;g*=1+f;b*=1+f}else{r+=(255-r)*f;g+=(255-g)*f;b+=(255-b)*f}
+  return `rgb(${r|0},${g|0},${b|0})`}
+function lum(hex){const n=parseInt(hex.slice(1),16);return (0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255}
+function txtFit(s,w){if(w<=0)return'';if(ctx.measureText(s).width<=w)return s;let lo=0,hi=s.length;while(lo<hi){const m=(lo+hi+1)>>1;ctx.measureText(s.slice(0,m)+'…').width<=w?lo=m:hi=m-1}return lo?s.slice(0,lo)+'…':''}
+const FONT='11px system-ui,Segoe UI,Arial';
+
+const PAL_LIGHT={'#232323':'#ececec','#2b2b2b':'#dcdcdc','#262626':'#e4e4e4','#3a3a3a':'#bcbcbc','#2e2e2e':'#d2d2d2','#2a2a2a':'#dadada','#888a':'#777a','#ffffff55':'#00000055','#0004':'#0000001a','#2f2f2f':'#e2e2e2','#aaa':'#777','#666':'#aaa','#ddd':'#2a2a2a','#555':'#aaa','#292929':'#dcdcdc','#e0b04a':'#a8740c','#7fc7ff':'#1b75b5','#2b2620':'#f2e5d0','#3a2c1a':'#e8cfa6','#33281a':'#eedabb','#bbb':'#444','#888':'#777','#a87':'#96643a','#333':'#d0d0d0','#2d2d2d':'#dcdcdc','#1b1b1b':'#c4c4c4','#3fdc6a':'#18a446','#4fc3ff':'#0a87cc','#ffffff22':'#00000026','#1a1a1a':'#d4d4d4','#111':'#aaa','#fff':'#000'};let PAL=null;const P=c=>PAL&&PAL[c]||c;
+
+const tl=(d,e)=>T(d,e); // T ist in draw() durch die Kopfhöhe verdeckt
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  if(!S.set)return;
+  const set=S.set, KH=kemperH(), T=L.RULER+L.SIG+L.LOC+KH, ppb=S.view.ppb, b0=xb(L.HEAD), b1=xb(W);
+  const i0=Math.max(0,barIndexAt(set,b0)-1);
+  const avgBar=set.bars[i0].len*ppb, step=[1,2,4,8,16,32,64].find(s=>s*avgBar>=46)||128;
+
+  // ---- Spurbereich
+  ctx.fillStyle=P('#232323');ctx.fillRect(L.HEAD,T,W-L.HEAD,H-T);
+  const rows=visibleRows();
+  ctx.save();ctx.beginPath();ctx.rect(L.HEAD,T,W-L.HEAD,H-T-L.SCROLL);ctx.clip();
+  rows.forEach((r,i)=>{const y=T+r.y-S.view.sy;if(y>H||y+r.h<T)return;ctx.fillStyle=r.t.kind==='group'?P('#2b2b2b'):(i%2?P('#262626'):P('#232323'));ctx.fillRect(L.HEAD,y,W-L.HEAD,r.h)});
+  for(let i=i0;i<set.bars.length;i++){
+    const bar=set.bars[i],x=bx(bar.b);if(x>W)break;
+    ctx.fillStyle=(bar.no-1)%step===0?P('#3a3a3a'):P('#2e2e2e');ctx.fillRect(Math.round(x),T,1,H-T);
+    const unit=4/bar.den;
+    if(unit*ppb>7)for(let k=1;k<bar.num;k++){ctx.fillStyle=P('#2a2a2a');ctx.fillRect(Math.round(bx(bar.b+k*unit)),T,1,H-T)}
+  }
+  ctx.font=FONT;ctx.textBaseline='middle';
+  for(const r of rows){
+    const y=T+r.y-S.view.sy;if(y>H||y+r.h<T||r.t.kind==='group')continue;
+    for(const c of r.t.clips){
+      if(c.end<b0||c.start>b1)continue;
+      const x=bx(c.start),w=Math.max(1,(c.end-c.start)*ppb),col=c.disabled?'#666666':c.color;
+      ctx.fillStyle=shade(col,-0.35);ctx.fillRect(x,y+1,w,r.h-2);
+      ctx.fillStyle=col;ctx.fillRect(x,y+1,w,Math.min(14,r.h-2));
+      ctx.strokeStyle=shade(col,-0.6);ctx.strokeRect(x+0.5,y+1.5,w-1,r.h-3);
+      if(w>16){ctx.fillStyle=lum(col)>0.55?'#111':'#fff';ctx.save();ctx.beginPath();ctx.rect(x,y,w,r.h);ctx.clip();
+        ctx.fillText(txtFit(c.name,w-6),Math.max(x,L.HEAD)+3,y+1+Math.min(7,(r.h-2)/2));ctx.restore()}
+    }
+  }
+  ctx.setLineDash([3,3]);ctx.strokeStyle=P('#888a');
+  for(const l of set.locators){const x=Math.round(bx(l.time))+0.5;if(x<L.HEAD||x>W)continue;ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,H);ctx.stroke()}
+  ctx.setLineDash([]);
+  // Event-Linien durch die Spuren
+  for(const e of S.events){const x=Math.round(bx(e.beat));if(x<L.HEAD||x>W)continue;ctx.fillStyle=S.sel.has(e.id)?P('#ffffff55'):evColor(e)+'40';ctx.fillRect(x,T,1,H-T)}
+  const xe=bx(set.contentEnd);if(xe>L.HEAD&&xe<W){ctx.fillStyle=P('#0004');ctx.fillRect(xe,T,W-xe,H-T)}
+  ctx.restore();
+
+  // ---- Kopfbereich
+  ctx.fillStyle=P('#2f2f2f');ctx.fillRect(L.HEAD,0,W-L.HEAD,T);
+  ctx.save();ctx.beginPath();ctx.rect(L.HEAD,0,W-L.HEAD,T);ctx.clip();
+  ctx.font=FONT;ctx.textBaseline='middle';
+  for(let i=i0;i<set.bars.length;i++){
+    const bar=set.bars[i],x=Math.round(bx(bar.b));if(x>W)break;
+    const major=(bar.no-1)%step===0;
+    ctx.fillStyle=major?P('#aaa'):P('#666');ctx.fillRect(x,major?6:16,1,major?L.RULER-6:L.RULER-16);
+    if(major){ctx.fillStyle=P('#ddd');ctx.fillText(bar.no,x+3,10)}
+    const unit=4/bar.den;
+    if(unit*ppb>7)for(let k=1;k<bar.num;k++){ctx.fillStyle=P('#555');ctx.fillRect(Math.round(bx(bar.b+k*unit)),21,1,5)}
+  }
+  let y=L.RULER;ctx.fillStyle=P('#292929');ctx.fillRect(L.HEAD,y,W-L.HEAD,L.SIG);
+  ctx.font='10px system-ui,Segoe UI,Arial';
+  let lastX=-1e9;
+  set.sigs.forEach(s=>{const x=Math.max(bx(s.b)+2,lastX+3);if(x>W)return;const t=`${s.num}/${s.den}`;
+    ctx.fillStyle=P('#e0b04a');ctx.fillRect(Math.round(bx(s.b)),y+2,1,L.SIG-4);ctx.fillText(t,x+1,y+L.SIG/2);lastX=x+1+ctx.measureText(t).width});
+  if(set.tempoPts.length>1)set.tempoPts.forEach((p,i)=>{if(i&&p.bpm===set.tempoPts[i-1].bpm)return;const x=bx(p.b);if(x>W)return;ctx.fillStyle=P('#7fc7ff');ctx.fillText(`♩${+p.bpm.toFixed(2)}`,x+30,y+L.SIG/2)});
+  y+=L.SIG;ctx.fillStyle=P('#262626');ctx.fillRect(L.HEAD,y,W-L.HEAD,L.LOC);
+  ctx.font=FONT;
+  set.locators.forEach((l,i)=>{const x=bx(l.time),nx=set.locators[i+1]?bx(set.locators[i+1].time):W;
+    ctx.fillStyle=P('#ddd');ctx.beginPath();ctx.moveTo(x,y+3);ctx.lineTo(x+8,y+L.LOC/2);ctx.lineTo(x,y+L.LOC-3);ctx.fill();
+    ctx.fillText(txtFit(l.name,nx-x-14),x+11,y+L.LOC/2)});
+  // Kemper-Lane
+  y+=L.LOC;ctx.fillStyle=P('#2b2620');ctx.fillRect(L.HEAD,y,W-L.HEAD,KH);
+  // Performance-Bereiche als Hintergrundbänder
+  const pcs=S.events.filter(e=>e.type==='pc');
+  pcs.forEach((e,i)=>{const x=bx(e.beat),x2=i+1<pcs.length?bx(pcs[i+1].beat):bx(set.end);ctx.fillStyle=i%2?P('#3a2c1a'):P('#33281a');ctx.fillRect(x,y,x2-x,KH)});
+  drawEvents(y,KH);
+  ctx.fillStyle='#ff9d2e44';ctx.fillRect(L.HEAD,y+KH-1,W-L.HEAD,1);
+  ctx.restore();
+
+  // ---- Linker Kopf
+  ctx.fillStyle=P('#2a2a2a');ctx.fillRect(0,0,L.HEAD,H);
+  ctx.fillStyle=P('#bbb');ctx.font='600 '+FONT;ctx.textBaseline='middle';
+  ctx.fillText(tl('Takt','Bar'),8,L.RULER/2);
+  ctx.font='10px system-ui,Segoe UI,Arial';ctx.fillStyle=P('#888');
+  ctx.fillText(tl('Taktart / Tempo','Time sig. / Tempo'),8,L.RULER+L.SIG/2);ctx.fillText('Locators',8,L.RULER+L.SIG+L.LOC/2);
+  ctx.font='600 '+FONT;ctx.fillStyle='#ff9d2e';ctx.fillText('KEMPER',8,L.RULER+L.SIG+L.LOC+14);
+  ctx.font='10px system-ui,Segoe UI,Arial';ctx.fillStyle=P('#a87');ctx.fillText(`${tl('MIDI-Kanal','MIDI channel')} ${S.channel} · ${S.events.length} Events`,8,L.RULER+L.SIG+L.LOC+30);
+  ctx.save();ctx.beginPath();ctx.rect(0,T,L.HEAD,H-T-L.SCROLL);ctx.clip();
+  for(const r of rows){
+    const y=T+r.y-S.view.sy;if(y>H||y+r.h<T)continue;
+    const ind=8+r.depth*12;
+    ctx.fillStyle=r.t.kind==='group'?P('#333'):P('#2d2d2d');ctx.fillRect(0,y,L.HEAD,r.h);
+    ctx.fillStyle=r.t.color;ctx.fillRect(ind-6,y+2,4,r.h-4);
+    ctx.fillStyle=P('#ddd');ctx.font=(r.t.kind==='group'?'600 ':'')+FONT;
+    let tx=ind+2;
+    if(r.t.kind==='group'){ctx.fillStyle=P('#aaa');ctx.fillText(S.collapsed.has(r.t.id)?'▶':'▼',tx,y+r.h/2);tx+=14;ctx.fillStyle=P('#ddd')}
+    ctx.fillText(txtFit(r.t.name,L.HEAD-tx-6),tx,y+Math.min(r.h/2,10));
+    ctx.fillStyle=P('#1b1b1b');ctx.fillRect(0,y+r.h-1,W,1);
+  }
+  ctx.restore();
+  ctx.fillStyle=P('#111');ctx.fillRect(L.HEAD-1,0,1,H);ctx.fillRect(0,T-1,W,1);
+
+  if(PLAY.on){const xp=bx(PLAY.pos);if(xp>=L.HEAD&&xp<=W){ctx.fillStyle=P('#3fdc6a');ctx.fillRect(Math.round(xp),0,2,H-L.SCROLL)}}
+  // ---- Cursor & Hover
+  const xc=bx(S.cursor);
+  if(xc>=L.HEAD&&xc<=W){ctx.fillStyle=P('#4fc3ff');ctx.fillRect(Math.round(xc),0,1,H-L.SCROLL);
+    ctx.beginPath();ctx.moveTo(xc-5,0);ctx.lineTo(xc+5,0);ctx.lineTo(xc,7);ctx.fill()}
+  if(S.hover&&S.hover.x>L.HEAD&&!drag){ctx.fillStyle=P('#ffffff22');ctx.fillRect(Math.round(bx(S.hover.snapped)),0,1,H-L.SCROLL)}
+  if(drag?.mode==='box'){const r=normBox(drag);ctx.strokeStyle='#ff9d2e';ctx.strokeRect(r.x+0.5,r.y+0.5,r.w,r.h);ctx.fillStyle='#ff9d2e18';ctx.fillRect(r.x,r.y,r.w,r.h)}
+
+  // ---- Scrollbar
+  const sbY=H-L.SCROLL, vw=W-L.HEAD, total=Math.max(vw,set.end*ppb+40);
+  ctx.fillStyle=P('#1a1a1a');ctx.fillRect(L.HEAD,sbY,vw,L.SCROLL);
+  const tw=Math.max(30,vw*vw/total), tx=L.HEAD+(S.view.sx/(total-vw||1))*(vw-tw);
+  ctx.fillStyle=P('#555');ctx.fillRect(tx,sbY+2,tw,L.SCROLL-4);
+  S._sb={tx,tw,vw,total};
+}
+function drawEvents(y0,KH){
+  // Zeilen: Events am gleichen Zeitpunkt werden gestapelt
+  const rowsAt={},placed=[];
+  for(const e of S.events){const k=e.beat.toFixed(4);const r=rowsAt[k]=(rowsAt[k]??-1)+1;placed.push({e,row:r})}
+  const nextX={}; // nächster Start je Zeile (für Textkürzung)
+  for(let i=placed.length-1;i>=0;i--){const p=placed[i];p.limit=nextX[p.row]??W+999;nextX[p.row]=bx(p.e.beat)}
+  ctx.font='10px system-ui,Segoe UI,Arial';ctx.textBaseline='middle';
+  S._evRects=[];
+  for(const p of placed){
+    const x=bx(p.e.beat);if(x>W+2||p.limit<L.HEAD)continue;
+    const y=y0+4+p.row*L.EVROW,h=L.EVROW-2,col=evColor(p.e),sel=S.sel.has(p.e.id);
+    const label=evLabel(p.e,true),tw=ctx.measureText(label).width+10;
+    const w=Math.max(8,Math.min(tw,p.limit-x-2));
+    ctx.fillStyle=col;ctx.fillRect(x,y,w,h);
+    ctx.fillStyle=shade(col,-0.5);ctx.fillRect(x,y,2,h);
+    if(sel){ctx.strokeStyle=P('#fff');ctx.lineWidth=1.5;ctx.strokeRect(x+0.5,y+0.5,w-1,h-1);ctx.lineWidth=1}
+    if(w>14){ctx.fillStyle=lum(col)>0.5?'#111':'#fff';ctx.fillText(txtFit(label,w-8),x+5,y+h/2+0.5)}
+    S._evRects.push({e:p.e,x,y,w,h});
+  }
+}
+(function loop(){if(dirty){dirty=false;draw()}requestAnimationFrame(loop)})();
+
+/* ================= Interaktion Timeline ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[<&>"]/g,m=>({'<':'&lt;','&':'&amp;','>':'&gt;','"':'&quot;'}[m]));
+function hitRow(y){const T=topH();if(y<T)return null;const yy=y-T+S.view.sy;return visibleRows().find(r=>yy>=r.y&&yy<r.y+r.h)||null}
+function hitEvent(x,y){return (S._evRects||[]).slice().reverse().find(r=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h)?.e}
+const kemperY=()=>L.RULER+L.SIG+L.LOC;
+function normBox(d){return{x:Math.min(d.x0,d.x1),y:Math.min(d.y0,d.y1),w:Math.abs(d.x1-d.x0),h:Math.abs(d.y1-d.y0)}}
+function setCursor(b){S.cursor=Math.max(0,b);S.browsePerf=null;updateStatus();renderRemote();req()}
+function updateStatus(){
+  if(!S.set)return;
+  const c=S.cursor;$('stCur').textContent=`${beatToBBT(S.set,c)} · ${fmtSec(beatToSec(S.set,c))} · ♩${tempoAt(S.set,c).toFixed(1)}`;
+}
+let drag=null;
+cv.addEventListener('mousedown',e=>{
+  if(!S.set)return;const x=e.offsetX,y=e.offsetY;closePop();
+  if(e.button===1||(e.altKey&&e.button===0)){drag={mode:'pan',x0:e.clientX,y0:e.clientY,sx:S.view.sx,sy:S.view.sy};e.preventDefault();return}
+  if(e.button!==0)return;
+  if(y>=H-L.SCROLL&&x>L.HEAD){const sb=S._sb;
+    if(x<sb.tx||x>sb.tx+sb.tw)S.view.sx=((x-L.HEAD-sb.tw/2)/(sb.vw-sb.tw))*(sb.total-sb.vw);
+    drag={mode:'sb',x0:e.clientX,sx:S.view.sx};clampView();req();return}
+  if(x<L.HEAD){const r=hitRow(y);if(r&&r.t.kind==='group'){S.collapsed.has(r.t.id)?S.collapsed.delete(r.t.id):S.collapsed.add(r.t.id);clampView();req()}return}
+  // Event anklicken / ziehen
+  const ev=hitEvent(x,y);
+  if(ev){
+    if(e.shiftKey||e.ctrlKey){S.sel.has(ev.id)?S.sel.delete(ev.id):S.sel.add(ev.id)}
+    else if(!S.sel.has(ev.id))S.sel=new Set([ev.id]);
+    if(e.detail===2){openEventEditor(ev);return}
+    drag={mode:'ev',lead:ev,b0:ev.beat,mx:xb(x),orig:new Map(S.events.filter(q=>S.sel.has(q.id)).map(q=>[q.id,q.beat])),snap:JSON.stringify(S.events),moved:false};
+    renderEvList();req();return;
+  }
+  // Leere Kemper-Lane: Rahmenauswahl
+  const ky=kemperY();
+  if(y>=ky&&y<ky+kemperH()){
+    if(!e.shiftKey)S.sel.clear();
+    drag={mode:'box',x0:x,y0:y,x1:x,y1:y,base:new Set(S.sel)};renderEvList();req();return;
+  }
+  if(y>=L.RULER+L.SIG&&y<ky){const l=[...S.set.locators].reverse().find(l=>x>=bx(l.time)-2);if(l){setCursor(l.time);return}}
+  if(!e.shiftKey&&S.sel.size){S.sel.clear();renderEvList()}
+  setCursor(snapBeat(S.set,xb(x),S.snap));drag={mode:'cursor'};
+});
+addEventListener('mousemove',e=>{
+  if(drag?.mode==='pan'){S.view.sx=drag.sx-(e.clientX-drag.x0);S.view.sy=drag.sy-(e.clientY-drag.y0);clampView();req();return}
+  if(drag?.mode==='sb'){const sb=S._sb;S.view.sx=drag.sx+(e.clientX-drag.x0)*(sb.total-sb.vw)/(sb.vw-sb.tw);clampView();req();return}
+  if(!S.set)return;
+  const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  if(drag?.mode==='cursor')setCursor(snapBeat(S.set,xb(x),S.snap));
+  if(drag?.mode==='ev'){
+    let nb=snapBeat(S.set,Math.max(0,drag.b0+xb(x)-drag.mx),S.snap);
+    const minOrig=Math.min(...drag.orig.values());let d=nb-drag.b0;if(minOrig+d<0)d=-minOrig;
+    if(Math.abs(d)>1e-9||drag.moved){drag.moved=true;for(const q of S.events)if(drag.orig.has(q.id))q.beat=drag.orig.get(q.id)+d;sortEvents();renderRemote();req()}
+  }
+  if(drag?.mode==='box'){drag.x1=x;drag.y1=y;const b=normBox(drag);S.sel=new Set(drag.base);
+    for(const q of S.events){const qx=bx(q.beat);if(qx>=b.x&&qx<=b.x+b.w)S.sel.add(q.id)}req()}
+  if(x<0||y<0||x>W||y>H){S.hover=null;req();return}
+  const b=Math.max(0,xb(x));S.hover={x,y,snapped:Math.max(0,snapBeat(S.set,b,S.snap))};
+  $('stHover').textContent=x>L.HEAD?`${beatToBBT(S.set,b)} · ${fmtSec(beatToSec(S.set,b))}`:'–';
+  const ev=hitEvent(x,y);
+  if(ev){$('stClip').innerHTML=`<b>${esc(evLabel(ev))}</b> @ ${beatToBBT(S.set,ev.beat)} · ${esc(midiText(ev))}`;cv.style.cursor='grab'}
+  else{cv.style.cursor='';const row=hitRow(y),clip=row&&x>L.HEAD&&row.t.clips.find(c=>b>=c.start&&b<c.end);
+    $('stClip').innerHTML=clip?`${esc(row.t.name)}: <b>${esc(clip.name)}</b> (${beatToBBT(S.set,clip.start)} – ${beatToBBT(S.set,clip.end)})`:''}
+  req();
+});
+addEventListener('mouseup',()=>{
+  if(drag?.mode==='ev'&&drag.moved){S.undo.push(drag.snap);S.redo=[];changed()}
+  if(drag?.mode==='box')renderEvList();
+  drag=null;req();
+});
+cv.addEventListener('dblclick',e=>{if(!S.set)return;const ev=hitEvent(e.offsetX,e.offsetY);if(ev)openEventEditor(ev)});
+cv.addEventListener('contextmenu',e=>{const ev=S.set&&hitEvent(e.offsetX,e.offsetY);if(ev){e.preventDefault();S.sel=new Set([ev.id]);deleteSelected()}});
+cv.addEventListener('wheel',e=>{
+  if(!S.set)return;e.preventDefault();
+  if(e.ctrlKey||e.metaKey){zoomAt(Math.exp(-e.deltaY*0.0018),e.offsetX);return}
+  if(e.shiftKey){S.view.sx+=e.deltaY+e.deltaX}else{S.view.sx+=e.deltaX;S.view.sy+=e.deltaY}
+  clampView();req();
+},{passive:false});
+addEventListener('keydown',e=>{
+  if(!S.set||document.querySelector('dialog[open]')||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  const mod=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+  if(mod&&k==='s'){e.preventDefault();saveProject();return}
+  if(mod&&k==='z'&&!e.shiftKey){e.preventDefault();undo();return}
+  if(mod&&(k==='y'||(k==='z'&&e.shiftKey))){e.preventDefault();redo();return}
+  if(mod&&k==='a'){e.preventDefault();S.sel=new Set(S.events.map(q=>q.id));renderEvList();req();return}
+  if(mod&&k==='c'){const sel=S.events.filter(q=>S.sel.has(q.id));if(sel.length){const m=Math.min(...sel.map(q=>q.beat));S.clipboard=sel.map(q=>({...q,beat:q.beat-m}))}return}
+  if(mod&&k==='v'){if(!S.clipboard)return;snapshot();const ids=[];for(const q of S.clipboard){const n={...q,beat:S.cursor+q.beat,id:evSeq++};ids.push(n.id);S.events.push(n)}S.sel=new Set(ids);changed();return}
+  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSelected();return}
+  if(e.key==='Enter'&&S.sel.size===1){e.preventDefault();openEventEditor(S.events.find(q=>S.sel.has(q.id)));return}
+  if(e.key==='ArrowRight'||e.key==='ArrowLeft'){setCursor(stepBeat(S.set,S.cursor,S.snap,e.key==='ArrowRight'?1:-1));revealBeat(S.cursor);req();e.preventDefault()}
+  else if(k==='f')fit();
+  else if(e.key==='+'||e.key==='=')zoomAt(1.25,bx(S.cursor));
+  else if(e.key==='-')zoomAt(0.8,bx(S.cursor));
+  else if(e.key==='Home'){setCursor(0);S.view.sx=0;clampView()}
+  else if(e.key===' '){e.preventDefault();PLAY.on?stopPlay():startPlay()}
+  else if(e.key==='Escape'){S.sel.clear();closePop();renderEvList();req()}
+});
+
+/* ================= Remote-Panel ================= */
+function renderRemote(){
+  const st=stateAt(S.cursor),bp=S.browsePerf??st.perf??1,pre=S.browsePerf!=null&&S.browsePerf!==st.perf,lm=S.looperMode;
+  const fxl=perf(st.perf??bp).fx||[];
+  $('lcd').innerHTML=`<span class="${pre?'pre':''}">${pre?'▸ ':''}P${bp}: ${esc(perfName(bp))}</span>`+
+    `<span>${lm?'<small>'+T('LOOPER-Modus','LOOPER mode')+'</small>':st.slot&&!pre?'Slot '+st.slot+': '+esc(slotName(st.perf,st.slot)):'<small>'+(pre?T('Slot wählen','Select slot'):T('– kein Slot –','– no slot –'))+'</small>'}</span>`;
+  document.querySelector('.remote').classList.toggle('loop',lm);
+  const sw=key=>{
+    let lbl='',led='',name=key,cls='';
+    if(lm&&LOOPER_KEYS[key]){lbl=LOOPER_KEYS[key][1];cls='slotlbl'}
+    else if(/^[1-5]$/.test(key)){const s=+key;lbl=esc(slotName(bp,s));led=(!pre&&st.slot===s&&st.perf===bp)?'on y':'';cls='slotlbl'+(led?' active':'')}
+    else if(FX[key]){const i=['I','II','III','IV'].indexOf(key),sm='ABCD'[i],m=st.stomps&&st.stomps[sm];
+      lbl=fxl[i]?esc(fxl[i]):m?(m.type?esc(m.name):'<small>'+sm+': '+T('leer','empty')+'</small>'):T('Effekt ','Effect ')+FX[key].label;
+      led=(key in st.fx?st.fx[key]:m&&m.type&&st.fx[sm])?'on g':'';name=FX[key].label}
+    else if(key==='UP'){lbl='Perf ▲';name='∧'}
+    else if(key==='DOWN'){lbl='Perf ▼';name='∨'}
+    else if(key==='TUNER'){lbl='Tuner';led=st.tuner?'on':''}
+    else if(key==='TAP'){lbl='Tap Tempo'}
+    else if(key==='LOOPER'){lbl=T('Looper-Modus','Looper mode');led=lm?'on g':''}
+    return `<div class="sw" data-k="${key}"><div class="lbl ${cls}">${lbl}</div><div class="led ${led}"></div><div class="knob"></div><div class="name">${name}</div></div>`;
+  };
+  $('rowTop').innerHTML='<div class="lcd" id="lcd">'+$('lcd').innerHTML+'</div>'+REMOTE_LAYOUT.top.map(sw).join('');
+  $('rowMid').innerHTML=REMOTE_LAYOUT.mid.map(sw).join('');
+  $('rowBot').innerHTML=REMOTE_LAYOUT.bottom.map(sw).join('');
+  const sb=st.stomps;
+  $('modRow').innerHTML='<span class="t">'+T('Weitere','More')+(sb?T(' (Belegung aus Slot)',' (assigned from slot)'):'')+':</span>'+MOD_KEYS.map(k=>{
+    const m=sb&&sb[STOMP_OF[k]||k],nm=m?(m.type?m.name:'–'):'',tail=STOMP_OF[k]?' +Tail':'';
+    const lbl=m?`<b>${STOMP_OF[k]||k}</b> ${esc(nm)}${tail}`:FX[k].label;
+    return `<button data-m="${k}" class="${st.fx[k]?'on':''}${m&&!m.type?' empty':''}" title="${esc(FX[k].label+(nm?' – '+nm:'')+' (CC '+FX[k].cc+')')}">${lbl}</button>`}).join('')+
+    '<button data-m="CC" title="'+T('Beliebiger Control Change','Any control change')+'">+ CC…</button>';
+}
+document.querySelector('.remote').addEventListener('click',e=>{const k=e.target.closest('.sw')?.dataset.k;if(k)remotePress(k,e)});
+$('modRow').addEventListener('click',e=>{const k=e.target.closest('button')?.dataset.m;if(!k||!S.set)return;
+  if(k==='CC'){openEventEditor({type:'cc',cc:7,value:127,beat:S.cursor},true);return}
+  const st=stateAt(S.cursor);addEvent({type:'fx',key:k,on:!st.fx[k],beat:S.cursor})});
+function remotePress(k,e){
+  if(k==='LOOPER'){S.looperMode=!S.looperMode;renderRemote();return}
+  if(!S.set)return;
+  if(S.looperMode&&LOOPER_KEYS[k]){addEvent({type:'looper',action:k==='2'&&e.shiftKey?94:LOOPER_KEYS[k][0],beat:S.cursor});return}
+  const st=stateAt(S.cursor),bp=S.browsePerf??st.perf??1,n=S.performances.length||125;
+  if(k==='UP'){S.browsePerf=bp>=n?1:bp+1;renderRemote();return}
+  if(k==='DOWN'){S.browsePerf=bp>1?bp-1:n;renderRemote();return}
+  if(/^[1-5]$/.test(k)){addEvent({type:'pc',perf:bp,slot:+k,pname:perf(bp).name||undefined,beat:S.cursor});S.browsePerf=null;renderRemote();return}
+  if(FX[k]){addEvent({type:'fx',key:k,on:!st.fx[k],beat:S.cursor});return}
+  if(k==='TAP'){addEvent({type:'tap',beat:S.cursor});return}
+  if(k==='TUNER'){addEvent({type:'tuner',on:!st.tuner,beat:S.cursor});return}
+}
+function closePop(){}
+
+/* ================= Event-Liste ================= */
+function renderEvList(){
+  $('evCount').textContent=S.events.length?`(${S.events.length})`:'';
+  if(!S.set){$('evList').innerHTML='';return}
+  if(!S.events.length){$('evList').innerHTML='<div style="padding:12px;color:var(--dim)">'+T('Noch keine Events. Cursor in der Timeline setzen und eine Remote-Taste klicken.','No events yet. Set the cursor in the timeline and click a remote button.')+'</div>';return}
+  $('evList').innerHTML='<table><thead><tr><th>'+T('Takt','Bar')+'</th><th>'+T('Zeit','Time')+'</th><th>'+T('Aktion','Action')+'</th><th>MIDI ('+T('Kanal','channel')+' '+S.channel+')</th></tr></thead><tbody>'+
+    S.events.map(e=>`<tr data-id="${e.id}" class="${S.sel.has(e.id)?'sel':''}"><td>${beatToBBT(S.set,e.beat)}</td><td>${fmtSec(beatToSec(S.set,e.beat))}</td>`+
+      `<td><span class="dot" style="background:${evColor(e)}"></span>${esc(evLabel(e))}</td><td class="midi">${esc(midiText(e))}</td></tr>`).join('')+'</tbody></table>';
+  $('evList').querySelector('tr.sel')?.scrollIntoView({block:'nearest'});
+}
+$('evList').addEventListener('click',e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;const id=+tr.dataset.id,ev=S.events.find(q=>q.id===id);
+  if(e.shiftKey||e.ctrlKey){S.sel.has(id)?S.sel.delete(id):S.sel.add(id)}else S.sel=new Set([id]);
+  setCursor(ev.beat);revealBeat(ev.beat);renderEvList();});
+$('evList').addEventListener('dblclick',e=>{const tr=e.target.closest('tr[data-id]');if(tr)openEventEditor(S.events.find(q=>q.id===+tr.dataset.id))});
+$('btnEvDel').onclick=deleteSelected;
+$('btnEvEdit').onclick=()=>{const ev=S.events.find(q=>S.sel.has(q.id));if(ev)openEventEditor(ev)};
+$('btnUndo').onclick=undo;$('btnRedo').onclick=redo;
+
+/* ================= Event-Editor ================= */
+function openEventEditor(ev,isNew=false){
+  const set=S.set,d=$('dlgEv');
+  const types={pc:'Performance/Slot',fx:T('Effekt/Modul','Effect/Module'),tap:'Tap Tempo',tuner:'Tuner',looper:'Looper',cc:'Control Change'};
+  const opt=(o,v)=>Object.entries(o).map(([k,l])=>`<option value="${k}" ${String(k)===String(v)?'selected':''}>${esc(l)}</option>`).join('');
+  const perfOpts=Object.fromEntries(Array.from({length:125},(_,i)=>[i+1,`${i+1}: ${perfName(i+1)}`]));
+  const body=t=>`<div class="row"><span>Position</span><input id="fPos" value="${beatToBBT(set,ev.beat)}" style="width:90px"> <small style="color:var(--dim)">${T('Takt.Schlag.16tel','Bar.Beat.16th')}</small></div>
+    <div class="row"><span>${T('Typ','Type')}</span><select id="fType">${opt(types,t)}</select></div>`+
+    (t==='pc'?`<div class="row"><span>Performance</span><select id="fPerf">${opt(perfOpts,(ev.type==='pc'&&resolvePerf(ev))||ev.perf||1)}</select></div><div class="row"><span>Slot</span><select id="fSlot">${opt({1:1,2:2,3:3,4:4,5:5},ev.slot||1)}</select></div>`:'')+
+    (t==='fx'?`<div class="row"><span>${T('Effekt','Effect')}</span><select id="fKey">${opt(Object.fromEntries(Object.entries(FX).map(([k,v])=>[k,v.label+' (CC'+v.cc+')'])),ev.key||'I')}</select></div><div class="row"><span>${T('Zustand','State')}</span><select id="fOn">${opt({1:onOff(1),0:onOff(0)},ev.on===false?0:1)}</select></div>`:'')+
+    (t==='tuner'?`<div class="row"><span>${T('Zustand','State')}</span><select id="fOn">${opt({1:onOff(1),0:onOff(0)},ev.on===false?0:1)}</select></div>`:'')+
+    (t==='looper'?`<div class="row"><span>${T('Aktion','Action')}</span><select id="fLoop">${opt(LOOPER,ev.action||88)}</select></div>`:'')+
+    (t==='cc'?`<div class="row"><span>${T('CC-Nummer','CC number')}</span><input id="fCC" type="number" min="0" max="127" value="${ev.cc??7}"></div><div class="row"><span>${T('Wert','Value')}</span><input id="fVal" type="number" min="0" max="127" value="${ev.value??127}"></div>`:'');
+  $('dlgEvTitle').textContent=isNew?T('Neues Event','New event'):T('Event bearbeiten','Edit event');
+  const render=t=>{$('dlgEvBody').innerHTML=body(t);$('fType').onchange=x=>{ev={...ev,beat:bbtToBeat(set,$('fPos').value)??ev.beat};render(x.target.value)}};
+  render(ev.type);
+  d.onclose=()=>{
+    if(d.returnValue!=='ok')return;
+    const t=$('fType').value,beat=bbtToBeat(set,$('fPos').value);
+    if(beat==null){alert(T('Ungültige Position','Invalid position'));return}
+    const n={type:t,beat};
+    if(t==='pc'){n.perf=+$('fPerf').value;n.slot=+$('fSlot').value;n.pname=perf(n.perf).name||undefined}
+    if(t==='fx'){n.key=$('fKey').value;n.on=$('fOn').value==='1'}
+    if(t==='tuner')n.on=$('fOn').value==='1';
+    if(t==='looper')n.action=+$('fLoop').value;
+    if(t==='cc'){n.cc=Math.max(0,Math.min(127,+$('fCC').value|0));n.value=Math.max(0,Math.min(127,+$('fVal').value|0))}
+    if(isNew){addEvent(n,{replaceSame:false})}
+    else{snapshot();const i=S.events.findIndex(q=>q.id===ev.id);if(i>=0)S.events[i]={...n,id:ev.id};S.sel=new Set([ev.id]);changed()}
+  };
+  d.returnValue='';d.showModal();
+}
+
+/* ================= Performance-Editor ================= */
+function renderPerfTable(n){
+  ensurePerfs(n);
+  $('perfTable').innerHTML='<table><thead><tr><th>#</th><th>Name</th>'+[1,2,3,4,5].map(i=>`<th>Slot ${i}</th>`).join('')+['I','II','III','IV'].map(i=>`<th>Eff. ${i}</th>`).join('')+'</tr></thead><tbody>'+
+    S.performances.slice(0,n).map((p,i)=>`<tr data-i="${i}"><td>${i+1}</td><td><input data-f="name" value="${esc(p.name)}"></td>`+
+      p.slots.map((s,j)=>`<td><input data-f="s${j}" value="${esc(s)}"></td>`).join('')+
+      [0,1,2,3].map(j=>`<td><input class="fx" data-f="f${j}" value="${esc((p.fx||[])[j]||'')}"></td>`).join('')+'</tr>').join('')+'</tbody></table>';
+}
+$('btnPerf').onclick=()=>{$('perfTitle').textContent='Performances – '+curDev().name;$('perfCount').value=Math.max(S.performances.length,25);renderPerfTable(+$('perfCount').value);$('dlgPerf').returnValue='';$('dlgPerf').showModal()};
+$('perfCount').onchange=e=>{readPerfTable();renderPerfTable(Math.max(1,Math.min(125,+e.target.value||1)))};
+function readPerfTable(){
+  for(const tr of $('perfTable').querySelectorAll('tr[data-i]')){
+    const p=S.performances[+tr.dataset.i];p.fx=p.fx||['','','',''];
+    for(const inp of tr.querySelectorAll('input')){const f=inp.dataset.f,v=inp.value.trim();
+      if(f==='name')p.name=v;else if(f[0]==='s')p.slots[+f[1]]=v;else p.fx[+f[1]]=v}
+  }
+}
+let perfBackup=null;
+$('btnPerf').addEventListener('click',()=>{perfBackup=JSON.stringify(S.performances)},true);
+$('dlgPerf').onclose=()=>{
+  if($('dlgPerf').returnValue==='ok'){readPerfTable();S.performances.length=Math.min(S.performances.length,+$('perfCount').value);savePerfsLocal();attachNames();renderRemote();renderEvList();req()}
+  else if(perfBackup)setPerfs(JSON.parse(perfBackup));
+};
+$('perfExport').onclick=()=>{readPerfTable();download('kemper-performances.json',JSON.stringify(S.performances,null,1))};
+$('perfImport').onclick=()=>$('perfFile').click();
+$('perfFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());const arr=Array.isArray(d)?d:d.performances;if(!Array.isArray(arr))throw 0;
+    setPerfs(arr.map(p=>({name:p.name||'',slots:[0,1,2,3,4].map(i=>(p.slots||[])[i]||''),fx:[0,1,2,3].map(i=>(p.fx||[])[i]||''),...(p.stomps?{stomps:p.stomps}:{})})));
+    $('perfCount').value=S.performances.length;renderPerfTable(S.performances.length)}catch{alert(T('Ungültige Performance-Datei','Invalid performance file'))}};
+
+/* ================= Projekt speichern/laden ================= */
+function download(name,text,type='application/json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+function saveProject(){
+  if(!S.set)return;
+  const base=S.fileName.replace(/\.als$/i,'');
+  download(base+'.kemper.json',JSON.stringify({app:'kemper-timeline',version:1,als:S.fileName,channel:S.channel,
+    devices:S.devices,activeDevice:S.devId,events:S.events.map(({id,...e})=>e)},null,1));
+}
+$('btnProjSave').onclick=saveProject;
+$('btnProjLoad').onclick=()=>$('projFile').click();
+$('projFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());if(d.app!=='kemper-timeline')throw 0;
+    if(!S.set){alert(T(`Bitte zuerst das zugehörige Set laden (${d.als||'.als'}).`,`Please load the matching set first (${d.als||'.als'}).`));return}
+    if(d.als&&d.als!==S.fileName&&!confirm(T(`Projekt gehört zu „${d.als}“, geladen ist „${S.fileName}“. Trotzdem laden?`,`Project belongs to “${d.als}”, loaded is “${S.fileName}”. Load anyway?`)))return;
+    snapshot();S.events=(d.events||[]).map(x=>({...x,id:evSeq++}));S.channel=d.channel||1;$('midiCh').value=S.channel;
+    if(Array.isArray(d.devices)&&d.devices.length){S.devices=d.devices;S.devId=d.activeDevice||d.devices[0].id;S.performances=curDev().performances;savePerfsLocal();renderDevSel()}
+    else if(Array.isArray(d.performances)&&d.performances.length){setPerfs(d.performances);savePerfsLocal()}
+    S.sel.clear();changed();
+  }catch{alert(T('Ungültige Projektdatei','Invalid project file'))}};
+
+
+
+/* ================= Web MIDI: Verbindung, Namen auslesen, Vorschau ================= */
+const MIDI={strings:new Map(),fxState:{},access:null,sysex:false,out:null,in:null,thru:false,chase:true,ptype:null,waiters:new Map(),abort:false};
+const lsGet=k=>{try{return localStorage.getItem(k)}catch{return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function midiInit(){
+  if(!navigator.requestMIDIAccess)throw new Error(T('Web MIDI wird nicht unterstützt – bitte Chrome oder Edge verwenden.','Web MIDI is not supported – please use Chrome or Edge.'));
+  if(!MIDI.access){
+    try{MIDI.access=await navigator.requestMIDIAccess({sysex:true});MIDI.sysex=true}
+    catch{MIDI.access=await navigator.requestMIDIAccess();MIDI.sysex=false}
+    MIDI.access.onstatechange=fillPorts;
+  }
+  fillPorts();
+}
+function fillPorts(){
+  if(!MIDI.access)return;
+  const opts=(list,cur)=>'<option value="">'+T('– keiner –','– none –')+'</option>'+list.map(p=>`<option value="${esc(p.id)}" ${cur===p.id?'selected':''}>${esc(p.name)}</option>`).join('');
+  $('midiOut').innerHTML=opts([...MIDI.access.outputs.values()],MIDI.out?.id??lsGet('kt:midiOut'));
+  $('midiIn').innerHTML=opts([...MIDI.access.inputs.values()],MIDI.in?.id??lsGet('kt:midiIn'));
+  setPorts($('midiOut').value,$('midiIn').value);
+}
+function setPorts(oid,iid){
+  MIDI.out=oid?MIDI.access.outputs.get(oid)||null:null;
+  if(MIDI.in&&MIDI.in.id!==iid)MIDI.in.onmidimessage=null;
+  MIDI.in=iid?MIDI.access.inputs.get(iid)||null:null;
+  if(MIDI.in)MIDI.in.onmidimessage=onMidiIn;
+  startBeacon();
+  lsSet('kt:midiOut',oid||'');lsSet('kt:midiIn',iid||'');updMidiStatus();
+}
+// Bidirektionaler Modus: Beacon (Funktion $7E) – Flags 0x03 = INIT|SYSEX, Time-Lease 5 (≈10 s); Erneuerung alle 5 s
+function sendBeacon(init){if(!MIDI.out||!MIDI.sysex)return;const m=[0xF0,0x00,0x20,0x33,0x02,0x7F,0x7E,0x00,0x40,0x02,init?0x03:0x02,0x05,0xF7];
+  try{MIDI.out.send(m);if(init)midiLog('→ Beacon',m)}catch{}}
+function startBeacon(){clearInterval(MIDI.beaconTimer);if(MIDI.out&&MIDI.in&&MIDI.sysex){sendBeacon(true);MIDI.beaconTimer=setInterval(()=>sendBeacon(false),5000)}}
+function updMidiStatus(){
+  $('midiDot').className='mdot'+(MIDI.out&&MIDI.in?' ok':MIDI.out?' half':'');
+  $('midiStatus').textContent=!MIDI.access?T('Nicht verbunden.','Not connected.'):
+    `${T('Ausgang','Output')}: ${MIDI.out?.name||'–'} · ${T('Eingang','Input')}: ${MIDI.in?.name||'–'} · SysEx: ${MIDI.sysex?T('erlaubt','allowed'):T('nicht erlaubt (Namen auslesen nicht möglich)','not allowed (reading names not possible)')} · ${T('Kanal','Channel')} ${S.channel}`;
+}
+const hex=a=>[...a].map(x=>x.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+// Protokoll: gleiche Nachrichten werden zusammengefasst (Zähler statt neuer Zeile)
+const LOG=new Map();
+function midiLog(dir,data){const el=$('midiLog');if(!el)return;const k=dir+' '+hex(data).slice(0,150);
+  const e=LOG.get(k)||{n:0};e.n++;e.t=new Date().toLocaleTimeString();LOG.delete(k);LOG.set(k,e);
+  if(LOG.size>200)LOG.delete(LOG.keys().next().value);
+  clearTimeout(MIDI.logT);MIDI.logT=setTimeout(()=>{el.textContent=[...LOG].reverse().map(([k,e])=>`${e.t} ${k}${e.n>1?'  (×'+e.n+')':''}`).join('\n')},100)}
+function onMidiIn(ev){
+  const d=ev.data;if(d[0]===0xF8||d[0]===0xFE){MIDI.rt=(MIDI.rt||0)+1;if(MIDI.rt%24===1)$('midiStatus').textContent=T('Echtzeit-Daten (Clock/Active Sensing) empfangen: ','Real-time data (Clock/Active Sensing) received: ')+MIDI.rt;return}
+  const kem=d[0]===0xF0&&d[1]===0x00&&d[2]===0x20&&d[3]===0x33,f=kem?d[6]:-1;
+  // Rauschen ausblenden: Kemper-Heartbeat ($7E 00 7F) und Tuner-/Systemwerte (Seiten $7C/$7D)
+  const noise=kem&&((f===0x7E&&d[8]===0x7F)||(f===0x01&&(d[8]===0x7C||d[8]===0x7D)));
+  if(noise){MIDI.noise=(MIDI.noise||0)+1;return}
+  if(!kem){
+    if((d[0]&0xF0)===0xB0&&d[1]===32)MIDI.bank=d[2];
+    if((d[0]&0xF0)===0xC0){const idx=(MIDI.bank||0)*128+d[1];MIDI.cur={perf:Math.floor(idx/5)+1,slot:idx%5+1,t:performance.now()}}
+    midiLog('←',d);return}
+  // Effektmodul-Daten: $01 (Typ = Param 0, An/Aus = Param 3) und $3C (Kurzname des Typs)
+  if((f===0x01||f===0x3C)&&PAGE_FX[d[8]]!=null){
+    const k=PAGE_FX[d[8]],o=MIDI.fxState[k]||(MIDI.fxState[k]={}),v=(d[10]<<7)|d[11];
+    if(f===0x01&&d[9]===0){o.type=v;o.t=performance.now()}
+    else if(f===0x01&&d[9]===3){o.on=v?1:0;o.t=performance.now()}
+    else if(f===0x3C&&d[9]===0){let t='';for(let i=12;i<d.length&&d[i]&&d[i]!==0xF7;i++)t+=String.fromCharCode(d[i]);o.short=t.trim()}
+    return;
+  }
+  let addr,i;
+  if(f===0x07){addr=[...d.slice(8,13)];i=13}
+  else if(f===0x03){addr=[0,0,0,d[8],d[9]];i=10}
+  else{midiLog('←',d);return}
+  let str='';for(;i<d.length&&d[i]!==0&&d[i]!==0xF7;i++)str+=String.fromCharCode(d[i]);
+  str=str.trim();
+  const key=(f===0x07?'x':'s')+addr.slice(3).join(',');
+  MIDI.strings.set(key,{v:str,t:performance.now()});
+  midiLog(`← Text ${f===0x07?'ext ':''}${hex(f===0x07?addr:addr.slice(3))} = „${str}“`,[]);
+  const w=MIDI.waiters.get(key);if(w){MIDI.waiters.delete(key);w(str)}
+}
+// Extended String Request (Funktion $47), 5-Byte-Adresse; Antwort mit Funktion $07/$03
+function reqExtString(addr,timeout=500){
+  return new Promise(res=>{
+    const key='x'+addr.slice(3).join(',');
+    const to=setTimeout(()=>{MIDI.waiters.delete(key);res(null)},timeout);
+    MIDI.waiters.set(key,s=>{clearTimeout(to);res(s)});
+    const types=MIDI.ptype==null?[0x02,0x00]:[MIDI.ptype];
+    for(const pt of types){const m=[0xF0,0x00,0x20,0x33,pt,0x7F,0x47,0x00,...addr,0xF7];midiLog('→',m);MIDI.out.send(m)}
+  });
+}
+// Namen der aktuellen Performance: aktiv anfragen, sonst die vom Kemper automatisch gesendeten Texte (seit 'since') nutzen
+async function readCurrentNames(since=0,expectPerf=null){
+  if(!MIDI.out||!MIDI.in)throw new Error(T('Bitte Ausgang und Eingang wählen.','Please select output and input.'));
+  if(!MIDI.sysex)throw new Error(T('SysEx wurde vom Browser nicht erlaubt.','SysEx was not allowed by the browser.'));
+  // war die Performance schon vor 'since' geladen, schickt der Kemper nichts Neues -> zuletzt empfangene Namen verwenden
+  if(expectPerf&&MIDI.cur?.perf===expectPerf&&MIDI.cur.t<since)since=0;
+  const fresh=n=>{const c=MIDI.strings.get('x0,'+n);return c&&c.t>=since};
+  // bis zu 2 s warten, bis Name UND alle 5 Slot-Namen neu empfangen wurden (Slot 5 kommt zuletzt)
+  for(let i=0;i<20;i++){if([0,1,2,3,4,5].every(fresh))break;await sleep(100)}
+  const cached=n=>fresh(n)?MIDI.strings.get('x0,'+n).v:null;
+  let name=cached(0)??await reqExtString([0,0,1,0,0]);
+  if(name==null)throw new Error(T('Keine Performance-Namen vom Kemper erhalten.','No performance names received from the Kemper.'));
+  const slots=[];for(let s=1;s<=5;s++)slots.push(cached(s)??await reqExtString([0,0,1,0,s],500)??'');
+  return {name,slots};
+}
+function storePerf(no,r,stomps){ensurePerfs(no);const p=S.performances[no-1];p.name=r.name;p.slots=r.slots.map(x=>x||'');p.fx=p.fx||['','','',''];if(stomps)p.stomps=stomps}
+// Typ und Zustand aller Module des geladenen Slots abfragen (Funktion $41)
+// Der Kemper sendet die Moduldaten nach dem Slot-Wechsel von selbst (Beacon); zusätzlich wird aktiv angefragt.
+// Module ohne neue Daten behalten den zuletzt empfangenen Stand.
+async function readStomps(){
+  for(const pg of Object.values(FX_PAGES))for(const prm of [0,3])MIDI.out.send([0xF0,0x00,0x20,0x33,0x02,0x7F,0x41,0x00,pg,prm,0xF7]);
+  await sleep(400);
+  const out={};let any=false;
+  for(const k in FX_PAGES){const o=MIDI.fxState[k]||{};if(o.type!=null)any=true;
+    out[k]={type:o.type??0,on:o.on?1:0,name:FX_TYPES[o.type]??o.short??(o.type!=null?T('Typ ','Type ')+o.type:'–')}}
+  return any?out:null;
+}
+function sendCC(cc,v,t){MIDI.out.send([0xB0|((S.channel-1)&15),cc,v],t)}
+function sendEvent(e,t){const bpm=S.set?tempoAt(S.set,e.beat):120;for(const m of evMidi(e))MIDI.out.send(m.msg,t+m.dt*60000/bpm)}
+
+$('btnMidi').onclick=async()=>{$('scanDev').textContent=curDev().name;$('dlgMidi').showModal();try{await midiInit()}catch(e){$('midiStatus').textContent=e.message}
+  $('curNo').value=S.browsePerf??stateAt(S.cursor).perf??1;$('scanTo').value=Math.max(+$('scanTo').value,S.performances.length||25)};
+$('midiOut').onchange=$('midiIn').onchange=()=>setPorts($('midiOut').value,$('midiIn').value);
+$('midiThru').onchange=e=>{MIDI.thru=e.target.checked};
+$('midiChase').onchange=e=>{MIDI.chase=e.target.checked};
+$('btnReadCur').onclick=async()=>{
+  try{$('scanMsg').textContent=T('Lese …','Reading …');const r=await readCurrentNames(),no=Math.max(1,Math.min(125,+$('curNo').value||1));
+    storePerf(no,r);savePerfsLocal();attachNames();renderRemote();renderEvList();req();
+    $('scanMsg').textContent=`P${no}: ${r.name} – ${r.slots.map((s,i)=>(i+1)+': '+(s||'–')).join(' · ')}`}
+  catch(e){$('scanMsg').textContent=e.message}
+};
+// Dokumentierter Request (Funktion $43): aktueller Rig-Name (Adresse 00 01)
+$('btnTestRig').onclick=async()=>{
+  if(!MIDI.out||!MIDI.in){$('scanMsg').textContent=T('Bitte Ausgang und Eingang wählen.','Please select output and input.');return}
+  const key='0,1';const r=await new Promise(res=>{const to=setTimeout(()=>{MIDI.waiters.delete(key);res(null)},800);
+    MIDI.waiters.set(key,v=>{clearTimeout(to);res(v)});
+    for(const pt of [0x02,0x00]){const m=[0xF0,0x00,0x20,0x33,pt,0x7F,0x43,0x00,0x00,0x01,0xF7];midiLog('→',m);try{MIDI.out.send(m)}catch(e){midiLog('!',[]);$('scanMsg').textContent=T('Senden fehlgeschlagen: ','Sending failed: ')+e.message}}});
+  $('scanMsg').textContent=r!=null?T(`OK – Rig-Name: „${r}“. Verbindung und SysEx funktionieren.`,`OK – rig name: “${r}”. Connection and SysEx are working.`):
+    T('Keine Antwort auf den dokumentierten Request. Prüfen: Kabel Kemper MIDI OUT → Interface IN, Eingang richtig gewählt, Port nicht von Live belegt.','No response to the documented request. Check: cable Kemper MIDI OUT → interface IN, correct input selected, port not in use by Live.');
+};
+$('btnTestOut').onclick=()=>{if(!MIDI.out){$('scanMsg').textContent=T('Kein Ausgang gewählt.','No output selected.');return}const n=performance.now();sendCC(31,1,n);sendCC(31,0,n+1500);midiLog('→ '+MIDI.out.name+':',[0xB0|((S.channel-1)&15),31,1]);
+  $('scanMsg').textContent=T('Tuner sollte 1,5 s lang aufgehen (Kanal ','Tuner should open for 1.5 s (channel ')+S.channel+').'};
+$('btnScanStop').onclick=()=>{MIDI.abort=true};
+$('btnScan').onclick=async()=>{
+  const from=Math.max(1,+$('scanFrom').value||1),to=Math.min(125,Math.max(from,+$('scanTo').value||from)),withStomps=$('scanStomps').checked,load=$('scanLoad').checked||withStomps;
+  MIDI.abort=false;let prev=null,same=0;const failed=[];
+  try{
+    for(let p=from;p<=to&&!MIDI.abort;p++){
+      $('scanMsg').textContent=`Performance ${p} / ${to} …`;
+      const t0=performance.now();sendCC(47,p-1);let r,st=null;
+      try{
+        if(withStomps){
+          st=[];
+          for(let sl=1;sl<=5&&!MIDI.abort;sl++){
+            $('scanMsg').textContent=`Performance ${p} / ${to} · Slot ${sl} …`;
+            sendCC(49+sl,1);await sleep(900);
+            if(sl===1)r=await readCurrentNames(t0,p);
+            st.push(r.slots[sl-1]?await readStomps():null);
+          }
+        }else{
+          if(load)sendCC(50,1);
+          await sleep(load?900:600);
+          r=await readCurrentNames(t0,p);
+        }
+      }catch(err){failed.push(p);continue}
+      storePerf(p,r,st);
+      if(prev!==null&&r.name===prev&&r.slots.join()===S.performances[p-2]?.slots.join())same++;
+      prev=r.name;
+    }
+    savePerfsLocal();attachNames();renderRemote();renderEvList();req();
+    $('scanMsg').textContent=MIDI.abort?T('Abgebrochen.','Cancelled.'):
+      (same>=Math.max(1,(to-from)/2)&&!load?T('Fertig – aber die Namen ändern sich kaum. Vermutlich reicht die Vorwahl nicht: Option „Performance dabei laden“ aktivieren und erneut auslesen.','Done – but the names barely change. Preselecting is probably not enough: enable “Load performance while reading” and read again.'):
+      T(`Fertig: Performances ${from}–${to} übernommen (siehe „Performances…“).`,`Done: performances ${from}–${to} imported (see “Performances…”).`))+(failed.length?T(' Keine Namen erhalten für: ',' No names received for: ')+failed.join(', ')+'.':'');
+  }catch(e){$('scanMsg').textContent=e.message}
+};
+
+// ---------- Vorschau: Timeline abspielen und Kemper schalten ----------
+const PLAY={on:false,pos:0,b0:0,s0:0,t0:0,idx:0,timer:null};
+function secToBeat(sec){let lo=0,hi=S.set.end+256;for(let i=0;i<40;i++){const m=(lo+hi)/2;beatToSec(S.set,m)<sec?lo=m:hi=m}return lo}
+const beatTime=b=>PLAY.t0+(beatToSec(S.set,b)-PLAY.s0)*1000;
+function startPlay(){
+  if(!S.set||PLAY.on)return;
+  let delay=60;
+  if(MIDI.out&&MIDI.chase){
+    // Zustand vor dem Cursor herstellen: erst Performance/Slot, danach Effekte
+    let pc=null;const fx={};
+    for(const e of S.events){if(e.beat>=S.cursor-1e-9)break;if(e.type==='pc'){pc=e;for(const k in fx)delete fx[k]}else if(e.type==='fx')fx[e.key]=e.on}
+    const now=performance.now();
+    if(pc){sendEvent(pc,now);delay=400}
+    Object.entries(fx).forEach(([k,on],i)=>sendEvent({type:'fx',key:k,on,beat:S.cursor},now+delay-150+i*5));
+  }
+  Object.assign(PLAY,{on:true,pos:S.cursor,b0:S.cursor,s0:beatToSec(S.set,S.cursor),t0:performance.now()+delay});
+  PLAY.idx=S.events.findIndex(e=>e.beat>=S.cursor-1e-9);if(PLAY.idx<0)PLAY.idx=S.events.length;
+  PLAY.timer=setInterval(playTick,20);$('btnPlay').classList.add('on');playTick();
+}
+function stopPlay(){if(!PLAY.on)return;clearInterval(PLAY.timer);PLAY.on=false;$('btnPlay').classList.remove('on');req()}
+function playTick(){
+  const now=performance.now(),horizon=now+120;
+  while(PLAY.idx<S.events.length){const e=S.events[PLAY.idx],t=beatTime(e.beat);if(t>horizon)break;
+    if(MIDI.out)sendEvent(e,Math.max(now,t));PLAY.idx++}
+  PLAY.pos=now<PLAY.t0?PLAY.b0:secToBeat(PLAY.s0+(now-PLAY.t0)/1000);
+  if(PLAY.pos>S.set.contentEnd+4){stopPlay();return}
+  const x=bx(PLAY.pos);if(x>W-60||x<L.HEAD){S.view.sx+=x-(L.HEAD+(W-L.HEAD)*0.2);clampView()}
+  $('stHover').textContent=`▶ ${beatToBBT(S.set,PLAY.pos)} · ${fmtSec(beatToSec(S.set,PLAY.pos))}`;
+  req();
+}
+$('btnPlay').onclick=()=>PLAY.on?stopPlay():startPlay();
+$('btnStop').onclick=stopPlay;
+// Gespeicherte Ports beim Start still verbinden (falls Berechtigung schon erteilt)
+navigator.permissions?.query({name:'midi',sysex:true}).then(r=>{if(r.state==='granted')midiInit().catch(()=>{})}).catch(()=>{});
+
+/* ================= Export ================= */
+// Ableton: MidiControllers/ControllerTargets.N  ->  N = CC-Nummer + CC_TARGET_OFFSET (0 = Pitch Bend, 1 = Pressure)
+const CC_TARGET_OFFSET=2;
+const KEMPER_TRACK_NAME='KEMPER';
+async function saveFile(name,blob,desc,ext){
+  if(window.showSaveFilePicker){
+    try{const h=await showSaveFilePicker({suggestedName:name,types:[{description:desc,accept:{[blob.type||'application/octet-stream']:[ext]}}]});
+      const w=await h.createWritable();await w.write(blob);await w.close();return h.name}
+    catch(e){if(e.name==='AbortError')return null}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),3000);return name;
+}
+const baseName=()=>S.fileName.replace(/\.als$/i,'');
+
+// ---------- MIDI-Datei (SMF Typ 1) ----------
+function buildSmf(dev=curDev()){
+  const PPQ=960,set=S.set,tk=b=>Math.max(0,Math.round(b*PPQ));
+  const u32=n=>[n>>>24&255,n>>>16&255,n>>>8&255,n&255],u16=n=>[n>>8&255,n&255];
+  const vlq=n=>{const b=[n&127];while(n>>=7)b.unshift((n&127)|128);return b};
+  const txt=(type,str)=>{const t=[...new TextEncoder().encode(str)];return [0xFF,type,...vlq(t.length),...t]};
+  const chunk=evs=>{evs.sort((a,b)=>a.tick-b.tick||a.ord-b.ord);let last=0;const out=[];
+    for(const e of evs){out.push(...vlq(e.tick-last),...e.bytes);last=e.tick}
+    out.push(0,0xFF,0x2F,0);return [0x4D,0x54,0x72,0x6B,...u32(out.length),...out]};
+  let ord=0;const cond=[{tick:0,ord:ord++,bytes:txt(3,baseName())}];
+  // Tempo (Rampen in 1/16-Schritten)
+  const tp=set.tempoPts;let lastBpm=null;
+  const tempoEv=(b,bpm)=>{if(lastBpm!==null&&Math.abs(bpm-lastBpm)<1e-3)return;lastBpm=bpm;const us=Math.round(60e6/bpm);cond.push({tick:tk(b),ord:ord++,bytes:[0xFF,0x51,3,us>>16&255,us>>8&255,us&255]})};
+  tp.forEach((p,i)=>{const n=tp[i+1];tempoEv(p.b,p.bpm);if(n&&n.b>p.b&&n.bpm!==p.bpm)for(let b=p.b+0.25;b<n.b-1e-9;b+=0.25)tempoEv(b,tempoAt(set,b))});
+  for(const s of set.sigs)cond.push({tick:tk(s.b),ord:ord++,bytes:[0xFF,0x58,4,s.num,Math.log2(s.den),24,8]});
+  for(const l of set.locators)cond.push({tick:tk(l.time),ord:ord++,bytes:txt(6,l.name)});
+  const kem=[{tick:0,ord:ord++,bytes:txt(3,KEMPER_TRACK_NAME)}];
+  for(const e of S.events){kem.push({tick:tk(e.beat),ord:ord++,bytes:txt(1,evLabel(e,true,dev))});
+    for(const m of evMidi(e,S.channel,dev))kem.push({tick:tk(e.beat+m.dt),ord:ord++,bytes:m.msg})}
+  const head=[0x4D,0x54,0x68,0x64,...u32(6),...u16(1),...u16(2),...u16(PPQ)];
+  return new Uint8Array([...head,...chunk(cond),...chunk(kem)]);
+}
+
+// ---------- Zeitplan für Ableton-Clips ----------
+// Jede Nachricht wird als Wertänderung in einer Clip-Hüllkurve abgebildet; Live sendet den Hüllkurvenwert beim Clipstart.
+function alsSchedule(d,dev=curDev()){
+  // Jeder Befehl wird als echte Wertänderung im Clip abgebildet (konstante Hüllkurven auf Standardwert verwirft Live).
+  // Startwert bei t-3d, Vorwahl/Adresse bei t-2d, Hauptbefehl bei t, Loslassen danach.
+  const alt=x=>x>0?x-1:1;
+  const msgs=e=>{const t=Math.max(e.beat,3*d),t0=t-3*d;switch(e.type){
+    case 'pc':{const pn=resolvePerf(e,dev);if(pn==null)return [];const cc=49+e.slot,pv=pn-1;return [[t0,47,alt(pv)],[t-2*d,47,pv],[t0,cc,0],[t,cc,1],[t+2*d,cc,0]]}
+    case 'fx':return [[t0,FX[e.key].cc,127],[t,FX[e.key].cc,e.on?1:0]];
+    case 'tuner':return [[t0,31,e.on?0:1],[t,31,e.on?1:0]];
+    case 'tap':return [[t0,30,0],[t,30,1],[t+2*d,30,0]];
+    case 'looper':{const a2=e.action===93?92:93;return [[t0,99,125],[t0,98,a2],[t-2*d,98,e.action],[t0,119,0],[t,119,1],[t+4*d,119,0]]}
+    case 'cc':return [[t0,e.cc,e.value===0?1:0],[t,e.cc,e.value]];
+  }return []};
+  const groups=[];
+  for(const e of S.events){
+    const m=msgs(e).map(([tt,cc,v])=>({tt,cc,v}));if(!m.length)continue;
+    const st=Math.min(...m.map(x=>x.tt)),en=Math.max(...m.map(x=>x.tt))+d;
+    const g=groups.at(-1);
+    if(g&&st<g.end+d){g.msgs.push(...m);g.end=Math.max(g.end,en);g.events.push(e)}
+    else groups.push({start:st,end:en,msgs:m,events:[e]});
+  }
+  groups.forEach((g,i)=>{const next=groups[i+1]?.start??Infinity;g.end=Math.min(Math.max(g.end,g.start+1),next)});
+  return groups;
+}
+
+// ---------- Ableton-Set mit KEMPER-Spur ----------
+function kids(el,tag){return [...el.children].filter(c=>c.tagName===tag)}
+function setVal(el,path,v){const n=ch(el,path);if(n)n.setAttribute('Value',String(v));return n}
+function clearChildren(el){if(el)while(el.firstChild)el.removeChild(el.firstChild)}
+const CLIP_TEMPLATE=`<MidiClip Id="0" Time="0"><LomId Value="0" /><LomIdView Value="0" /><CurrentStart Value="0" /><CurrentEnd Value="1" /><Loop><LoopStart Value="0" /><LoopEnd Value="1" /><StartRelative Value="0" /><LoopOn Value="false" /><OutMarker Value="1" /><HiddenLoopStart Value="0" /><HiddenLoopEnd Value="1" /></Loop><Name Value="" /><Annotation Value="" /><Color Value="1" /><LaunchMode Value="0" /><LaunchQuantisation Value="0" /><TimeSignature><TimeSignatures><RemoteableTimeSignature Id="0"><Numerator Value="4" /><Denominator Value="4" /><Time Value="0" /></RemoteableTimeSignature></TimeSignatures></TimeSignature><Envelopes><Envelopes /></Envelopes><ScrollerTimePreserver><LeftTime Value="0" /><RightTime Value="1" /></ScrollerTimePreserver><TimeSelection><AnchorTime Value="0" /><OtherTime Value="0" /></TimeSelection><Legato Value="false" /><Ram Value="false" /><GrooveSettings><GrooveId Value="-1" /></GrooveSettings><Disabled Value="false" /><VelocityAmount Value="0" /><FollowAction><FollowTime Value="4" /><IsLinked Value="true" /><LoopIterations Value="1" /><FollowActionA Value="4" /><FollowActionB Value="0" /><FollowChanceA Value="100" /><FollowChanceB Value="0" /><JumpIndexA Value="1" /><JumpIndexB Value="1" /><FollowActionEnabled Value="false" /></FollowAction><Grid><FixedNumerator Value="1" /><FixedDenominator Value="16" /><GridIntervalPixel Value="20" /><Ntoles Value="2" /><SnapToGrid Value="true" /><Fixed Value="false" /></Grid><FreezeStart Value="0" /><FreezeEnd Value="0" /><IsWarped Value="true" /><TakeId Value="1" /><Notes><KeyTracks /><PerNoteEventStore><EventLists /></PerNoteEventStore><NoteIdGenerator><NextId Value="1" /></NoteIdGenerator></Notes><BankSelectCoarse Value="-1" /><BankSelectFine Value="-1" /><ProgramChange Value="-1" /></MidiClip>`;
+
+function buildAls(d,dev=curDev(),out=null){
+  const doc=new DOMParser().parseFromString(S.raw,'application/xml');
+  const ls=ch(doc.documentElement,'LiveSet'),tracks=ch(ls,'Tracks');
+  const isKemper=t=>t.tagName==='MidiTrack'&&val(t,'Name/EffectiveName')===KEMPER_TRACK_NAME;
+  const old=kids(tracks,'MidiTrack').find(isKemper);
+  const tpl=kids(tracks,'MidiTrack').find(t=>!isKemper(t))||old;
+  if(!tpl)throw new Error(T('Das Set enthält keine MIDI-Spur als Vorlage. Bitte in Live eine leere MIDI-Spur anlegen, Set speichern und neu laden.','The set contains no MIDI track to use as a template. Please create an empty MIDI track in Live, save the set and reload it.'));
+  // Clip-Vorlage: vorhandener MidiClip aus dem Set (passende Live-Version), sonst eingebaute Vorlage
+  const anyClip=doc.getElementsByTagName('MidiClip')[0];
+  const clipTpl=anyClip?anyClip.cloneNode(true):new DOMParser().parseFromString(CLIP_TEMPLATE,'application/xml').documentElement;
+
+  const tr=tpl.cloneNode(true);
+  // Inhalte leeren
+  clearChildren(ch(tr,'AutomationEnvelopes/Envelopes'));
+  clearChildren(ch(tr,'DeviceChain/DeviceChain/Devices'));
+  clearChildren(ch(tr,'TakeLanes/TakeLanes'));
+  const ms=ch(tr,'DeviceChain/MainSequencer');
+  for(const slot of [...tr.getElementsByTagName('ClipSlot')]){const v=ch(slot,'Value');if(v&&v.parentElement===slot)clearChildren(v)}
+  const fs=ch(tr,'DeviceChain/FreezeSequencer');
+  if(fs)for(const e of fs.getElementsByTagName('Events'))clearChildren(e);
+  const evs=ch(ms,'ClipTimeable/ArrangerAutomation/Events');clearChildren(evs);
+  // Name, Farbe, Gruppe
+  setVal(tr,'Name/EffectiveName',KEMPER_TRACK_NAME);setVal(tr,'Name/UserName',KEMPER_TRACK_NAME);
+  setVal(tr,'Color',1);setVal(tr,'TrackGroupId',-1);setVal(tr,'LinkedTrackGroupId',-1);
+  // MIDI-Ausgang + Kanal
+  const outR=ch(tr,'DeviceChain/MidiOutputRouting');
+  if(outR&&out!=null){
+    const dev=out===''?null:out;
+    setVal(outR,'Target',dev?`MidiOut/External.Dev:${dev}/${S.channel-1}`:'MidiOut/None');
+    setVal(outR,'UpperDisplayString',dev||'No Output');setVal(outR,'LowerDisplayString',dev?`Ch. ${S.channel}`:'');
+  }
+  // Pointee-IDs neu vergeben
+  const npi=ch(ls,'NextPointeeId');let nextId=parseInt(npi.getAttribute('Value'));
+  let maxId=0;for(const el of doc.querySelectorAll('[Id]')){if(el.querySelector(':scope>LockEnvelope')||el.tagName==='Pointee')maxId=Math.max(maxId,+el.getAttribute('Id'))}
+  nextId=Math.max(nextId,maxId+1);
+  const ctrl={};
+  for(const el of tr.querySelectorAll('[Id]')){
+    if(!(el.querySelector(':scope>LockEnvelope')||el.tagName==='Pointee'))continue;
+    el.setAttribute('Id',nextId);
+    const m=/^ControllerTargets\.(\d+)$/.exec(el.tagName);if(m)ctrl[+m[1]]=nextId;
+    nextId++;
+  }
+  npi.setAttribute('Value',nextId);
+  // Track-ID
+  let maxTrack=0;for(const t of doc.querySelectorAll('Tracks>*,Returns>*,ReturnTracks>*'))maxTrack=Math.max(maxTrack,+t.getAttribute('Id')||0);
+  for(const t of ls.querySelectorAll('MidiTrack,AudioTrack,GroupTrack,ReturnTrack'))maxTrack=Math.max(maxTrack,+t.getAttribute('Id')||0);
+  tr.setAttribute('Id',maxTrack+1);
+
+  // Clips erzeugen
+  const groups=alsSchedule(d,dev);let clipId=0;const missing=new Set();
+  for(const g of groups){
+    const c=clipTpl.cloneNode(true),len=g.end-g.start;
+    c.setAttribute('Id',clipId++);c.setAttribute('Time',g.start);
+    setVal(c,'CurrentStart',g.start);setVal(c,'CurrentEnd',g.end);
+    setVal(c,'Loop/LoopStart',0);setVal(c,'Loop/LoopEnd',len);setVal(c,'Loop/StartRelative',0);setVal(c,'Loop/LoopOn','false');
+    setVal(c,'Loop/OutMarker',len);setVal(c,'Loop/HiddenLoopStart',0);setVal(c,'Loop/HiddenLoopEnd',len);
+    setVal(c,'Name',g.events.map(e=>evLabel(e,true,dev)).join(' / '));setVal(c,'Annotation','');
+    const t0=g.events[0].type;setVal(c,'Color',t0==='pc'?1:t0==='fx'?(g.events[0].on?19:14):t0==='looper'?20:13);
+    setVal(c,'Disabled','false');
+    for(const k of ['BankSelectCoarse','BankSelectFine','ProgramChange'])setVal(c,k,-1);
+    const notes=ch(c,'Notes');if(notes){clearChildren(ch(notes,'KeyTracks'));clearChildren(ch(notes,'PerNoteEventStore/EventLists'));setVal(notes,'NoteIdGenerator/NextId',1)}
+    const envs=ch(c,'Envelopes/Envelopes');clearChildren(envs);
+    const byCC=new Map();for(const m of g.msgs){if(!byCC.has(m.cc))byCC.set(m.cc,[]);byCC.get(m.cc).push(m)}
+    let envId=0;
+    for(const [cc,list] of byCC){
+      const pid=ctrl[cc+CC_TARGET_OFFSET];if(pid==null){missing.add(cc);continue}
+      list.sort((a,b)=>a.tt-b.tt);
+      const ce=doc.createElement('ClipEnvelope');ce.setAttribute('Id',envId++);
+      const et=doc.createElement('EnvelopeTarget'),pi=doc.createElement('PointeeId');pi.setAttribute('Value',pid);et.appendChild(pi);ce.appendChild(et);
+      const au=doc.createElement('Automation'),ev=doc.createElement('Events');au.appendChild(ev);ce.appendChild(au);
+      let fid=0,cur=list[0].v;
+      const fe=(time,v)=>{const f=doc.createElement('FloatEvent');f.setAttribute('Id',fid++);f.setAttribute('Time',time);f.setAttribute('Value',v);ev.appendChild(f)};
+      fe(-63072000,cur);
+      for(const m of list.slice(1)){if(m.v===cur)continue;const lt=+(m.tt-g.start).toFixed(6);fe(lt,cur);fe(lt,m.v);cur=m.v}
+      const tv=doc.createElement('AutomationTransformViewState'),ip=doc.createElement('IsTransformPending');ip.setAttribute('Value','false');
+      tv.appendChild(ip);tv.appendChild(doc.createElement('TimeAndValueTransforms'));au.appendChild(tv);
+      envs.appendChild(ce);
+    }
+    evs.appendChild(c);
+  }
+  // Einfügen (vorhandene KEMPER-Spur ersetzen, sonst als erste Spur)
+  if(old){tracks.replaceChild(tr,old)}else tracks.insertBefore(tr,tracks.firstElementChild);
+  let xml=new XMLSerializer().serializeToString(doc);
+  if(!xml.startsWith('<?xml'))xml='<?xml version="1.0" encoding="UTF-8"?>\n'+xml;
+  return {xml,clips:groups.length,missing:[...missing],replaced:!!old};
+}
+async function gzip(text){return new Uint8Array(await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer())}
+
+$('btnExport').onclick=()=>{if(!S.set){alert(T('Bitte zuerst ein Set laden.','Please load a set first.'));return}
+  $('expDev').innerHTML=S.devices.map(d=>`<option value="${esc(d.id)}" ${d.id===S.devId?'selected':''}>${esc(d.name)}</option>`).join('');fillExpOut();updExpDev();updPulseMs();expMsg(S.events.length?'':T('Hinweis: Es sind noch keine Events vorhanden.','Note: there are no events yet.'));$('dlgExp').showModal()};
+function fillExpOut(){
+  // Ports: aus vorhandenen Spuren im Set (exakte Live-Schreibweise) + Web-MIDI-Ausgänge
+  const names=new Set();
+  for(const m of (S.raw||'').matchAll(/MidiOut\/External\.Dev:([^"]*?)\/-?\d+"/g))names.add(m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>'));
+  if(MIDI.access)for(const o of MIDI.access.outputs.values())names.add(o.name);
+  const pref=lsGet('kt:expOut')??MIDI.out?.name??'';
+  $('expOut').innerHTML=`<option value="">${T('Kein Ausgang','No output')}</option>`+[...names].map(n=>`<option ${n===pref?'selected':''}>${esc(n)}</option>`).join('');
+  if(pref&&!names.has(pref))$('expOut').insertAdjacentHTML('beforeend',`<option selected>${esc(pref)}</option>`);
+  $('expChMsg').textContent=`${T('Kanal','Channel')} ${S.channel}`}
+function updPulseMs(){const d=+$('expPulse').value;$('expPulseMs').textContent=`≈ ${(60/S.set.tempoPts[0].bpm*d*1000).toFixed(1)} ms ${T('bei','at')} ♩${+S.set.tempoPts[0].bpm.toFixed(2)}`}
+$('expPulse').onchange=updPulseMs;
+const expDev=()=>devById($('expDev').value);
+function updExpDev(){const m=missingOn(expDev());
+  $('expDevMsg').textContent=m.length?T(`⚠ ${m.length} Performance-Wechsel nicht auf „${expDev().name}“ gefunden: ${[...new Set(m.map(e=>e.pname))].join(', ')} – werden übersprungen.`,`⚠ ${m.length} performance changes not found on “${expDev().name}”: ${[...new Set(m.map(e=>e.pname))].join(', ')} – will be skipped.`):''}
+$('expDev').onchange=updExpDev;
+const expSuffix=()=>S.devices.length>1?` (Kemper ${expDev().name})`:' (Kemper)';
+function expMsg(html,cls=''){const m=$('expMsg');m.className='';void m.offsetWidth;m.className=cls;m.innerHTML=html;if(cls)m.scrollIntoView({block:'nearest'})}
+const expAbort=()=>expMsg(T('Export abgebrochen – nichts gespeichert.','Export cancelled – nothing saved.'));
+$('expMid').onclick=async()=>{
+  try{const n=await saveFile(baseName()+expSuffix()+'.mid',new Blob([buildSmf(expDev())],{type:'audio/midi'}),T('MIDI-Datei','MIDI file'),'.mid');
+    if(n)expMsg(`${T('Export erfolgreich gespeichert','Export saved successfully')}: <b>${esc(n)}</b> – ${S.events.length} Events.`,'ok');else expAbort()}catch(e){expMsg(T('Fehler: ','Error: ')+esc(e.message),'err');console.error(e)}
+};
+$('expAls').onclick=async()=>{
+  try{const r=buildAls(+$('expPulse').value,expDev(),$('expOut').value);lsSet('kt:expOut',$('expOut').value);
+    const n=await saveFile(baseName()+expSuffix()+'.als',new Blob([await gzip(r.xml)],{type:'application/octet-stream'}),'Ableton Live Set','.als');
+    if(!n)return expAbort();
+    expMsg(T(`Export erfolgreich gespeichert: <b>${esc(n)}</b> – Spur „${KEMPER_TRACK_NAME}“ ${r.replaced?'ersetzt':'hinzugefügt'}, ${r.clips} Clips.`,`Export saved successfully: <b>${esc(n)}</b> – track “${KEMPER_TRACK_NAME}” ${r.replaced?'replaced':'added'}, ${r.clips} clips.`)+
+      (r.missing.length?` <span style="color:#f77">${T('Fehlende CC-Ziele','Missing CC targets')}: ${r.missing.join(', ')}</span>`:'')+
+      T('<br>In den gleichen Ordner wie das Original-Set speichern, damit die Audio-Pfade stimmen.'+($('expOut').value?'':' In Live den MIDI-Ausgang der KEMPER-Spur auf das Kemper-Interface stellen.'),'<br>Save into the same folder as the original set so the audio paths stay valid.'+($('expOut').value?'':' In Live, set the MIDI output of the KEMPER track to the Kemper interface.')),'ok')}
+  catch(e){expMsg(T('Fehler: ','Error: ')+esc(e.message),'err');console.error(e)}
+};
+
+/* ================= Geräteprofile UI ================= */
+function renderDevSel(){$('devSel').innerHTML=S.devices.map(d=>`<option value="${esc(d.id)}" ${d.id===S.devId?'selected':''}>${esc(d.name)}</option>`).join('')+'<option value="+">'+T('＋ Neues Gerät…','＋ New device…')+'</option>'}
+function newDevice(copy){const name=prompt(T('Name des Geräteprofils (z. B. Rack):','Device profile name (e.g. Rack):'),copy?curDev().name+T(' Kopie',' copy'):'');if(!name)return null;
+  const d={id:'d'+Date.now(),name:name.trim(),performances:copy?JSON.parse(JSON.stringify(S.performances)):[]};S.devices.push(d);return d}
+$('devSel').onchange=e=>{if(e.target.value==='+'){const d=newDevice(false);if(d)useDevice(d.id);else renderDevSel();return}useDevice(e.target.value)};
+$('devRename').onclick=()=>{const n=prompt(T('Neuer Name:','New name:'),curDev().name);if(n){curDev().name=n.trim();savePerfsLocal();renderDevSel();$('perfTitle').textContent='Performances – '+curDev().name}};
+$('devCopy').onclick=()=>{readPerfTable();const d=newDevice(true);if(d){$('dlgPerf').returnValue='ok';$('dlgPerf').close();useDevice(d.id)}};
+$('devDelete').onclick=()=>{if(S.devices.length<2){alert(T('Das letzte Profil kann nicht gelöscht werden.','The last profile cannot be deleted.'));return}
+  if(!confirm(T(`Profil „${curDev().name}“ löschen?`,`Delete profile “${curDev().name}”?`)))return;S.devices=S.devices.filter(d=>d.id!==S.devId);perfBackup=null;$('dlgPerf').returnValue='cancel';$('dlgPerf').close();useDevice(S.devices[0].id)};
+
+/* ================= Sonstige UI ================= */
+$('snap').onchange=e=>{S.snap=e.target.value};
+$('trackH').oninput=e=>{S.trackH=+e.target.value;clampView();req()};
+$('midiCh').onchange=e=>{S.channel=Math.max(1,Math.min(16,+e.target.value||1));e.target.value=S.channel;try{localStorage.setItem('kt:channel',S.channel)}catch{}if(S.set)changed();updMidiStatus()};
+try{S.channel=Math.max(1,Math.min(16,+localStorage.getItem('kt:channel')||1))}catch{}
+$('midiCh').value=S.channel;
+$('btnFit').onclick=fit;
+$('btnZoomIn').onclick=()=>zoomAt(1.4);
+$('btnZoomOut').onclick=()=>zoomAt(1/1.4);
+$('btnOpen').onclick=()=>$('file').click();
+$('file').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0]);e.target.value=''};
+wrap.addEventListener('dragover',e=>{e.preventDefault();wrap.classList.add('dragover')});
+wrap.addEventListener('dragleave',()=>wrap.classList.remove('dragover'));
+wrap.addEventListener('drop',e=>{e.preventDefault();wrap.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)loadFile(f)});
+// Höhe unterer Bereich
+$('splitter').addEventListener('mousedown',e=>{const y0=e.clientY,h0=$('bottom').offsetHeight;
+  const mv=ev=>{$('bottom').style.height=Math.max(120,Math.min(innerHeight-200,h0-(ev.clientY-y0)))+'px'};
+  const up=()=>{removeEventListener('mousemove',mv);removeEventListener('mouseup',up)};
+  addEventListener('mousemove',mv);addEventListener('mouseup',up);e.preventDefault()});
+
+function updInfo(){if(!S.set)return;const set=S.set,s0=set.sigs[0];
+  $('info').textContent=`${S.fileName} · ${set.creator} · ♩${+set.tempo[0].bpm.toFixed(2)} · ${s0.num}/${s0.den} · ${set.bars[barIndexAt(set,set.contentEnd)].no} ${T('Takte','bars')} · ${fmtSec(beatToSec(set,set.contentEnd))}`+(S.restored?T(' · Events wiederhergestellt',' · events restored'):'')}
+async function loadFile(file){
+  try{
+    const text=await readAlsFile(file),set=parseAls(text);
+    buildTimeModel(set);
+    Object.assign(S,{set,raw:text,fileName:file.name,cursor:0,events:[],browsePerf:null,undo:[],redo:[]});
+    S.sel=new Set();
+    S.collapsed=new Set(set.tracks.filter(t=>t.kind==='group'&&!t.unfolded).map(t=>t.id));
+    const restored=loadSongLocal();
+    S.events.forEach(e=>e.id=evSeq++);$('midiCh').value=S.channel;attachNames();
+    $('drop').style.display='none';
+    S.restored=restored;updInfo();
+    changed(false);fit();updateStatus();
+  }catch(err){alert(T('Fehler beim Laden: ','Error loading: ')+err.message);console.error(err)}
+}
+/* ================= Handbuch (iFrame) ================= */
+function helpHtml(){let h=$('helpDoc').innerHTML;if(LANG==='en')h=h.replace('AbleRigged – Handbuch','AbleRigged – Manual').replace(/<nav id="toc">[\s\S]*<\/section><\/main>/,()=>$('helpDocEn').innerHTML.trim());return '<!doctype html>'+(THEME==='light'?'<html class="light">':'')+h}
+function openHelp(){const f=$('helpFrame');if(f.dataset.lang!==LANG+THEME){f.srcdoc=helpHtml();f.dataset.lang=LANG+THEME}$('dlgHelp').showModal();setTimeout(()=>f.contentWindow?.focus(),50)}
+const closeHelp=()=>$('dlgHelp').close();
+/* ================= Info / Spenden / Kompatibilität ================= */
+const SUPPORT_URL='https://ko-fi.com/thorstenbanning';
+const hasSupport=()=>!/DEIN-NAME/.test(SUPPORT_URL);
+function midiCompat(){if(!navigator.requestMIDIAccess)return T('Dein Browser unterstützt kein Web MIDI – AbleRigged braucht Chrome oder Edge (Desktop) für die Verbindung zum Kemper.','Your browser does not support Web MIDI – AbleRigged needs Chrome or Edge (desktop) to connect to the Kemper.');
+  if(!window.isSecureContext)return T('Web MIDI funktioniert nur über HTTPS oder als lokale Datei.','Web MIDI only works over HTTPS or as a local file.');return ''}
+let compatClosed=false;
+function renderCompat(){const m=midiCompat();$('compatMsg').textContent='⚠ '+m;$('compatBar').hidden=!m||compatClosed}
+$('compatClose').onclick=()=>{compatClosed=true;renderCompat()};
+function openAbout(){const ok=!midiCompat();
+  $('aboutTitle').textContent=T('Über AbleRigged','About AbleRigged');$('aboutClose').textContent=T('Schließen','Close');
+  $('aboutBody').innerHTML=`<p>${T('AbleRigged ist kostenlos. Wenn dir die App Zeit spart oder deine Live-Shows einfacher macht, freue ich mich über eine kleine Spende – sie hilft, die App weiterzuentwickeln.','AbleRigged is free. If it saves you time or makes your live shows easier, a small donation is much appreciated – it helps keep development going.')}</p>`
+  +(hasSupport()?`<a class="kofi" href="${esc(SUPPORT_URL)}" target="_blank" rel="noopener">☕ ${T('Spenden via Ko-fi','Support on Ko-fi')}</a>`:'')
+  +`<h3>${T('Systemvoraussetzungen','Requirements')}</h3><ul>`
+  +`<li>${T('<b>Chrome</b> oder <b>Edge</b> (Desktop) – Safari unterstützt kein Web MIDI, Firefox nur eingeschränkt.','<b>Chrome</b> or <b>Edge</b> (desktop) – Safari does not support Web MIDI, Firefox only partially.')}</li>`
+  +`<li>${T('MIDI läuft nur über HTTPS oder als lokal geöffnete Datei.','MIDI only works over HTTPS or as a locally opened file.')}</li>`
+  +`<li>${T('Zum Auslesen von Namen die <b>SysEx</b>-Abfrage des Browsers erlauben.','Allow the browser\'s <b>SysEx</b> prompt to read names.')}</li>`
+  +`<li>${T('Dein Browser','Your browser')}: Web MIDI ${ok?'<span class="ok">✓</span>':'<span class="bad">✗ '+esc(midiCompat())+'</span>'}</li></ul>`
+  +`<div class="legal">${T('AbleRigged ist ein unabhängiges Projekt von Thorsten Banning und steht in keiner Verbindung zur Kemper GmbH oder zur Ableton AG. Kemper, Profiler und Ableton Live sind Marken ihrer jeweiligen Inhaber. Nutzung auf eigene Gefahr, ohne Gewähr.','AbleRigged is an independent project by Thorsten Banning and is not affiliated with Kemper GmbH or Ableton AG. Kemper, Profiler and Ableton Live are trademarks of their respective owners. Use at your own risk, without warranty.')}</div>`;
+  $('dlgAbout').showModal()}
+$('btnAbout').onclick=openAbout;
+$('btnHelp').onclick=openHelp;$('helpClose').onclick=closeHelp;
+addEventListener('message',e=>{if(e.data==='closeHelp'&&e.source===$('helpFrame').contentWindow)closeHelp()});
+addEventListener('keydown',e=>{if(e.key==='F1'){e.preventDefault();$('dlgHelp').open?closeHelp():document.querySelector('dialog[open]')||openHelp()}});
+/* ================= Sprache: statische Texte ================= */
+const I18N={'Ableton-Set öffnen':'Open Ableton set','ALS öffnen…':'Open ALS…','Projekt speichern (Strg+S)':'Save project (Ctrl+S)','Projekt speichern':'Save project',
+'Projekt (.json) laden':'Load project (.json)','Projekt laden…':'Load project…','Gerät':'Device','MIDI-Verbindung zum Kemper':'MIDI connection to the Kemper',
+'Ab Cursor abspielen und Kemper schalten (Leertaste)':'Play from cursor and switch the Kemper (Space)','Stopp':'Stop','MIDI-Kanal':'MIDI channel','MIDI-Ausgang in Live':'MIDI output in Live','Raster':'Grid',
+'Takt':'Bar','aus':'off','Spurhöhe':'Track height','Ganzen Song anzeigen (F)':'Show whole song (F)','Einpassen':'Fit','Zoom + (Strg+Mausrad)':'Zoom + (Ctrl+mouse wheel)',
+'Handbuch (F1)':'Manual (F1)','? Hilfe':'? Help','☕ Unterstützen':'☕ Support','Info & Unterstützen':'Info & support','Keine Datei geladen':'No file loaded','Ableton-Set (.als) hierher ziehen':'Drag an Ableton set (.als) here',
+'oder „ALS öffnen…“ klicken':'or click “Open ALS…”','Höhe ändern':'Resize','Doppelklick auf Event':'Double-click an event','Bearbeiten':'Edit','Entf':'Del','Löschen':'Delete',
+'Strg+Z':'Ctrl+Z','Strg+Y':'Ctrl+Y','Maus:':'Mouse:',
+'Remote-Taste = Event am Cursor (LOOPER schaltet Looper-Modus) · Ziehen: verschieben · Doppelklick: bearbeiten · Entf · Strg+Z/C/V/S · ←/→ · F':'Remote button = event at cursor (LOOPER toggles looper mode) · Drag: move · Double-click: edit · Del · Ctrl+Z/C/V/S · ←/→ · F',
+'Abbrechen':'Cancel','Zielgerät':'Target device','Impulslänge':'Pulse length','1/64 Schlag':'1/64 beat','1/32 Schlag':'1/32 beat','1/16 Schlag':'1/16 beat',
+'Vorwahl (CC47) und NRPN-Adresse werden um 2 Impulse vor dem Event gesendet, damit der Slot-/Looper-Befehl exakt auf der Position liegt.':'Preselect (CC47) and NRPN address are sent 2 pulses before the event so the slot/looper command lands exactly on the position.',
+'Ableton-Set mit KEMPER-Spur (.als)':'Ableton set with KEMPER track (.als)','MIDI-Datei (.mid)':'MIDI file (.mid)','Schließen':'Close','MIDI-Verbindung':'MIDI connection',
+'Ausgang (→ Kemper)':'Output (→ Kemper)','Eingang (← Kemper)':'Input (← Kemper)','Remote-Klicks sofort an den Kemper senden':'Send remote clicks to the Kemper immediately',
+'Beim Abspielen zuerst Zustand am Cursor senden':'On playback, first send the state at the cursor','Diagnose':'Diagnostics','Test: Rig-Namen lesen':'Test: read rig name',
+'Test: Tuner an/aus senden':'Test: send tuner on/off','Namen vom Kemper auslesen':'Read names from the Kemper','→ Profil „':'→ profile “','“':'”','Aktuelle Perf.':'Current perf.',
+'Lesen und speichern als Nr.':'Read and save as no.','Bereich':'Range','von':'from','bis':'to','Performance dabei laden (Slot 1)':'Load performance while reading (slot 1)',
+'Stomp-Belegung mitlesen (lädt jeden Slot, ca. 5 s pro Performance)':'Also read stomp assignment (loads every slot, approx. 5 s per performance)','Bereich auslesen':'Read range',
+'Geräteprofil':'Device profile','Umbenennen…':'Rename…','Als neues Profil kopieren…':'Copy as new profile…','Profil löschen':'Delete profile','Anzahl':'Count',
+'JSON importieren…':'Import JSON…','JSON exportieren':'Export JSON',
+'Effekt I–IV: Beschriftung der Effekt-Taster der Remote (je Performance). Leer = Name von Stomp A–D des aktiven Slots (Kemper-Standardzuordnung).':'Effect I–IV: labels of the remote’s effect buttons (per performance). Empty = name of stomp A–D of the active slot (Kemper default assignment).',
+'Übernehmen':'Apply','Hell-/Dunkel-Modus':'Light/dark mode','Handbuch':'Manual','Schließen (Esc)':'Close (Esc)','AbleRigged Handbuch':'AbleRigged manual'};
+const I18N_NODES=[];
+(function collectI18n(){
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>/SCRIPT|STYLE/.test(n.parentNode.nodeName)?2:1});
+  for(let n;(n=w.nextNode());){const k=n.nodeValue.trim();if(I18N[k])I18N_NODES.push({n,de:n.nodeValue,k})}
+  for(const el of document.body.querySelectorAll('[title]')){const k=el.getAttribute('title');if(I18N[k])I18N_NODES.push({el,de:k})}
+})();
+function applyLang(){
+  document.documentElement.lang=LANG;$('langSel').value=LANG;
+  for(const x of I18N_NODES){if(x.el)x.el.title=LANG==='en'?I18N[x.de]:x.de;else x.n.nodeValue=LANG==='en'?x.de.replace(x.k,I18N[x.k]):x.de}
+  renderCompat()}
+$('langSel').onchange=e=>{LANG=e.target.value;try{localStorage.setItem('kt:lang',LANG)}catch{}
+  applyLang();renderDevSel();renderRemote();renderEvList();updMidiStatus();updInfo();if(MIDI.access)fillPorts();if(S.set)updateStatus();req()};
+applyLang();
+/* ================= Hell/Dunkel ================= */
+let THEME=(()=>{try{const t=localStorage.getItem('kt:theme');if(t==='light'||t==='dark')return t}catch{}return matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'})();
+function applyTheme(){document.documentElement.classList.toggle('light',THEME==='light');PAL=THEME==='light'?PAL_LIGHT:null;$('btnTheme').textContent=THEME==='light'?'☾':'☀';req()}
+$('btnTheme').onclick=()=>{THEME=THEME==='light'?'dark':'light';try{localStorage.setItem('kt:theme',THEME)}catch{}applyTheme()};
+applyTheme();
+loadPerfsLocal();renderDevSel();renderRemote();renderEvList();
+</script>
+</body>
+</html>

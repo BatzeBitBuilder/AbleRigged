@@ -3,7 +3,7 @@
 **Automate your Kemper in Ableton Live.**  
 Browser-App zum Planen und Exportieren von Kemper-Profiler-Umschaltungen (Performances, Slots, Effekte) passend zur Ableton-Live-Timeline.
 
-▶ **App starten:** https://BatzeBitBuilder.github.io/ablerigged/
+▶ **App starten:** https://batzebitbuilder.github.io/AbleRigged/
 
 ## Voraussetzungen
 - Chrome oder Edge (Desktop) – Safari unterstützt kein Web MIDI, Firefox nur eingeschränkt

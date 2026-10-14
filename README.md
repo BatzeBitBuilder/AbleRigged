@@ -1,16 +1,16 @@
 # AbleRigged
 
 **Automate your Kemper in Ableton Live.**  
-Browser-App zum Planen und Exportieren von Kemper-Profiler-Umschaltungen (Performances, Slots, Effekte) passend zur Ableton-Live-Timeline.
+A browser app for planning and exporting Kemper Profiler presets (performances, slots, effects) that sync with the Ableton Live timeline.
 
-▶ **App starten:** https://batzebitbuilder.github.io/AbleRigged/
+▶ **Launch the app:** https://batzebitbuilder.github.io/AbleRigged/
 
-## Voraussetzungen
-- Chrome oder Edge (Desktop) – Safari unterstützt kein Web MIDI, Firefox nur eingeschränkt
-- Für das Auslesen von Namen die SysEx-Abfrage des Browsers erlauben
+## Requirements
+- Chrome or Edge (desktop) – Safari does not support Web MIDI; Firefox has limited support
+- Allow the browser to send SysEx messages to read names
 
-## Unterstützen
-AbleRigged ist kostenlos. Wenn dir die App hilft: ☕ https://ko-fi.com/thorstenbanning
+## Support
+AbleRigged is free. If you find the app helpful: ☕ https://ko-fi.com/thorstenbanning
 
-## Hinweis
-Unabhängiges Projekt von Thorsten Banning, nicht verbunden mit der Kemper GmbH oder der Ableton AG. Kemper, Profiler und Ableton Live sind Marken ihrer jeweiligen Inhaber. Nutzung auf eigene Gefahr, ohne Gewähr.
+## Note
+An independent project by Thorsten Banning, not affiliated with Kemper GmbH or Ableton AG. Kemper, Profiler, and Ableton Live are trademarks of their respective owners. Use at your own risk; no warranty is provided.
